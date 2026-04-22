@@ -7,6 +7,7 @@ import CreatePartyPage from "./pages/CreatePartyPage";
 
 export default function App() {
   const [tela, setTela] = useState("landing");
+  const [usuario, setUsuario] = useState(null);
 
   if (tela === "landing") {
     return <LandingPage irParaAuth={() => setTela("auth")} />;
@@ -17,20 +18,21 @@ export default function App() {
       <AuthPage
         voltar={() => setTela("landing")}
         irParaOnboarding={() => setTela("onboarding")}
+        onLoginSuccess={(novoUsuario) => setUsuario(novoUsuario)}
       />
     );
   }
 
   if (tela === "onboarding") {
-    return <OnboardingPage irParaHome={() => setTela("home")} />;
+    return <OnboardingPage irParaHome={() => setTela("home")} usuario={usuario} />;
   }
 
   if (tela === "home") {
-    return <HomePage irParaCriarParty={() => setTela("create-party")} />;
+    return <HomePage irParaCriarParty={() => setTela("create-party")} usuario={usuario} />;
   }
 
   if (tela === "create-party") {
-    return <CreatePartyPage voltar={() => setTela("home")} />;
+    return <CreatePartyPage voltar={() => setTela("home")} usuario={usuario} />;
   }
 
   return null;
