@@ -1,271 +1,167 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Users2, MapPin, Link2, ArrowRight, Zap, Star } from 'lucide-react'
+import { ArrowRight, ArrowUpRight } from 'lucide-react'
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 32 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
-}
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.12 } },
-}
+const enter = (delay = 0) => ({
+  hidden: { opacity: 0, y: 24 },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] } },
+})
 
 export default function LandingPage() {
   const navigate = useNavigate()
 
   return (
     <div style={s.root}>
-      {/* ── 1. NAVBAR ── */}
+
+      {/* ── NAV ── */}
       <nav style={s.nav}>
-        <div style={s.navInner}>
-          <span style={s.logo}>hangr</span>
-          <div style={s.navLinks}>
-            <button style={s.navLink} onClick={() => navigate('/auth')}>Entrar</button>
-            <button style={s.btnPrimary} onClick={() => navigate('/auth')}>
-              Começar <ArrowRight size={15} />
-            </button>
-          </div>
+        <span style={s.logo}>hangr</span>
+        <div style={s.navRight}>
+          <button style={s.navLink} onClick={() => navigate('/auth')}>Entrar</button>
+          <button style={s.navCta} onClick={() => navigate('/auth')}>
+            Começar <ArrowUpRight size={14} />
+          </button>
         </div>
       </nav>
 
-      {/* ── 2. HERO ── */}
+      {/* ── HERO ── */}
       <section style={s.hero}>
-        <div style={s.heroBg} />
+
+        {/* Decorative starburst */}
+        <div style={s.starburst} aria-hidden>✳</div>
+
         <div style={s.heroInner}>
+
+          {/* Left — headline + CTA */}
           <motion.div
-            style={s.heroContent}
-            initial="hidden"
-            animate="show"
-            variants={stagger}
+            style={s.heroLeft}
+            initial="hidden" animate="show"
+            variants={{ hidden:{}, show:{ transition:{ staggerChildren:0.1 } } }}
           >
-            <motion.div variants={fadeUp} style={s.heroBadge}>
-              <Zap size={13} style={{ color: 'var(--warning)' }} />
-              Novo jeito de combinar rolê
-            </motion.div>
-
-            <motion.h1 variants={fadeUp} style={s.heroTitle}>
-              Acabe com a indecisão,{' '}
-              <span className="gradient-text">o Hangr decide</span>{' '}
-              por você!
+            <motion.h1 variants={enter(0)} style={s.heroTitle}>
+              Acabe<br />com a<br />indecisão.
             </motion.h1>
-
-            <motion.p variants={fadeUp} style={s.heroSub}>
-              Reúna seus amigos, registrem gostos em comum e o app encontra o
-              rolê perfeito pra todo mundo.
+            <motion.p variants={enter(0.1)} style={s.heroSub}>
+              O Hangr cruza os gostos do grupo e decide o rolê por vocês.
             </motion.p>
-
-            <motion.div variants={fadeUp} style={s.heroCtas}>
-              <button style={s.btnPrimary} onClick={() => navigate('/auth')}>
-                Criar conta grátis <ArrowRight size={16} />
-              </button>
-              <button style={s.btnGhost} onClick={() => {
-                document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
-              }}>
-                Como funciona
-              </button>
-            </motion.div>
+            <motion.button
+              variants={enter(0.2)}
+              style={s.btnWhite}
+              onClick={() => navigate('/auth')}
+              whileTap={{ scale: 0.97 }}
+            >
+              Criar conta grátis <ArrowRight size={16} />
+            </motion.button>
           </motion.div>
 
-          {/* Phone mockup */}
+          {/* Right — match card */}
           <motion.div
-            style={s.phoneMockup}
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            style={s.matchCard}
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 3.5, ease: 'easeInOut' }}
-              style={s.phone}
-            >
-              <div style={s.phoneNotch} />
-              <div style={s.phoneScreen}>
-                <div style={s.mockupHeader}>
-                  <span style={s.mockupLogo}>hangr</span>
-                  <div style={s.mockupAvatars}>
-                    {['#8B5CF6', '#6366F1', '#EC4899'].map((c, i) => (
-                      <div key={i} style={{ ...s.mockupAvatar, background: c, marginLeft: i ? -8 : 0 }} />
-                    ))}
-                  </div>
-                </div>
-
-                <div style={s.mockupMatch}>
-                  <div style={s.matchBadge}><Star size={11} /> Match encontrado!</div>
-                  <p style={s.matchTitle}>Japonesa + Cerveja</p>
-                  <p style={s.matchSub}>3 de 4 amigos curtiram</p>
-                </div>
-
-                <div style={s.mockupPlace}>
-                  <div style={s.placeIcon}>📍</div>
-                  <div>
-                    <p style={s.placeName}>Izakaya Bar & Sushi</p>
-                    <p style={s.placeInfo}>2.3 km · Aberto agora</p>
-                  </div>
-                  <div style={s.placeScore}>98%</div>
-                </div>
-
-                <div style={s.mockupPlace}>
-                  <div style={s.placeIcon}>🍺</div>
-                  <div>
-                    <p style={s.placeName}>Cervejaria Centro</p>
-                    <p style={s.placeInfo}>1.1 km · Aberto agora</p>
-                  </div>
-                  <div style={{ ...s.placeScore, background: 'rgba(99,102,241,0.15)', color: '#818CF8' }}>91%</div>
-                </div>
-
-                <button style={s.mockupBtn}>Ver todos os lugares</button>
+            <p style={s.matchEye}>MATCH ENCONTRADO</p>
+            <p style={s.matchTitle}>Japonesa<br />+ Cerveja</p>
+            <div style={s.matchDivider} />
+            <div style={s.matchPlace}>
+              <span style={s.matchPlaceIcon}>📍</span>
+              <div>
+                <p style={s.matchPlaceName}>Izakaya Bar &amp; Sushi</p>
+                <p style={s.matchPlaceInfo}>2.3 km · Aberto agora</p>
               </div>
-            </motion.div>
+            </div>
+            <div style={s.matchAvatars}>
+              {['#000', '#333', '#555', '#777'].map((c, i) => (
+                <div key={i} style={{ ...s.matchAvatar, background: c, outline: '2px solid #CCFF00', marginLeft: i ? -8 : 0 }} />
+              ))}
+              <span style={s.matchAvatarsText}>3 de 4 curtiram</span>
+            </div>
           </motion.div>
         </div>
       </section>
 
-      {/* ── 3. PROBLEM ── */}
+      {/* ── PROBLEM ── */}
       <section style={s.problem}>
         <div style={s.container}>
           <motion.div
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: '-80px' }}
-            variants={stagger}
-            style={s.problemInner}
+            initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}
+            variants={{ hidden:{}, show:{ transition:{ staggerChildren:0.1 } } }}
           >
-            <motion.p variants={fadeUp} style={s.problemEyebrow}>Você conhece bem essa cena</motion.p>
-            <motion.h2 variants={fadeUp} style={s.sectionTitle}>
-              A decisão de grupo nunca é simples
+            <motion.p variants={enter()} style={s.eyebrow}>O problema</motion.p>
+            <motion.h2 variants={enter()} style={s.sectionTitle}>
+              Decisão em grupo sempre vira bagunça.
             </motion.h2>
 
-            <motion.div variants={stagger} style={s.bubbles}>
+            <motion.div variants={{ hidden:{}, show:{ transition:{ staggerChildren:0.08 } } }} style={s.quoteList}>
               {[
-                { text: '"Onde vamos hoje?"', side: 'left' },
-                { text: '"Tanto faz, qualquer lugar"', side: 'right' },
-                { text: '"Não sei não, você decide"', side: 'left' },
-                { text: '"Ai nunca decide nada 😤"', side: 'right' },
-              ].map((b, i) => (
-                <motion.div
-                  key={i}
-                  variants={fadeUp}
-                  style={{
-                    ...s.bubble,
-                    alignSelf: b.side === 'right' ? 'flex-end' : 'flex-start',
-                    background: b.side === 'right' ? 'var(--bg-elevated)' : 'var(--bg-card)',
-                    borderRadius: b.side === 'right'
-                      ? '18px 18px 4px 18px'
-                      : '18px 18px 18px 4px',
-                  }}
-                >
-                  {b.text}
+                '"Onde vamos hoje?"',
+                '"Tanto faz, qualquer lugar"',
+                '"Não sei, você decide"',
+                '"Aff, nunca decide nada..."',
+              ].map((q, i) => (
+                <motion.div key={i} variants={enter()} style={s.quoteRow}>
+                  <span style={s.quoteText}>{q}</span>
                 </motion.div>
               ))}
             </motion.div>
 
-            <motion.div variants={fadeUp} style={s.problemResolution}>
-              <div style={s.resolutionLine} />
-              <div style={s.resolutionBadge}>
-                <Zap size={14} style={{ color: 'var(--warning)' }} />
-                Chega disso. O Hangr resolve.
-              </div>
-              <div style={s.resolutionLine} />
+            <motion.div variants={enter()} style={s.problemAnswer}>
+              <span style={s.problemAnswerTag}>SOLUÇÃO</span>
+              O Hangr decide por vocês. Em 30 segundos.
             </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* ── 4. SOLUTION / FEATURES ── */}
-      <section id="features" style={s.features}>
+      {/* ── HOW IT WORKS ── */}
+      <section style={s.how}>
         <div style={s.container}>
           <motion.div
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: '-80px' }}
-            variants={stagger}
+            initial="hidden" whileInView="show" viewport={{ once: true, margin: '-60px' }}
+            variants={{ hidden:{}, show:{ transition:{ staggerChildren:0.1 } } }}
           >
-            <motion.p variants={fadeUp} style={s.problemEyebrow}>Como funciona</motion.p>
-            <motion.h2 variants={fadeUp} style={s.sectionTitle}>
-              Três passos, zero discussão
-            </motion.h2>
+            <motion.p variants={enter()} style={s.eyebrow}>Como funciona</motion.p>
+            <motion.h2 variants={enter()} style={s.sectionTitle}>Três passos.</motion.h2>
 
-            <motion.div variants={stagger} style={s.featureGrid}>
-              {[
-                {
-                  icon: <Users2 size={26} />,
-                  num: '01',
-                  title: 'Gostos em comum',
-                  desc: 'Cria um rolê baseado no que todos do grupo curtem. O app cruza as preferências e encontra o match.',
-                  color: '#8B5CF6',
-                },
-                {
-                  icon: <MapPin size={26} />,
-                  num: '02',
-                  title: 'Lugares reais',
-                  desc: 'Via Foursquare, o Hangr encontra lugares abertos perto de vocês que combinam com o gosto do grupo.',
-                  color: '#6366F1',
-                },
-                {
-                  icon: <Link2 size={26} />,
-                  num: '03',
-                  title: 'Link de convite',
-                  desc: 'Compartilha um link com o grupo. Cada um entra, registra seus gostos e o app faz o match automático.',
-                  color: '#EC4899',
-                },
-              ].map((f) => (
-                <motion.div
-                  key={f.num}
-                  variants={fadeUp}
-                  style={s.featureCard}
-                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                >
-                  <div style={{ ...s.featureIcon, background: `${f.color}20`, color: f.color }}>
-                    {f.icon}
-                  </div>
-                  <span style={s.featureNum}>{f.num}</span>
-                  <h3 style={s.featureTitle}>{f.title}</h3>
+            {[
+              { n: '01', title: 'Gostos em comum', desc: 'Cada pessoa registra o que curte. O app cruza tudo.' },
+              { n: '02', title: 'Lugares reais', desc: 'Via Foursquare, busca lugares abertos que encaixam no perfil do grupo.' },
+              { n: '03', title: 'Link de convite', desc: 'Compartilha um link. Todo mundo entra e o match acontece.' },
+            ].map((f, i) => (
+              <motion.div key={f.n} variants={enter()} style={{ ...s.featureRow, borderTop: i === 0 ? `1px solid var(--line)` : 'none' }}>
+                <span style={s.featureNum}>{f.n}</span>
+                <div style={s.featureBody}>
+                  <p style={s.featureTitle}>{f.title}</p>
                   <p style={s.featureDesc}>{f.desc}</p>
-                </motion.div>
-              ))}
-            </motion.div>
+                </div>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </section>
 
-      {/* ── 8. FINAL CTA ── */}
-      <section style={s.finalCta}>
-        <div style={s.finalCtaGlow} />
-        <div style={s.container}>
-          <motion.div
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: '-80px' }}
-            variants={stagger}
-            style={s.finalCtaInner}
-          >
-            <motion.h2 variants={fadeUp} style={s.finalCtaTitle}>
-              Pronto pra decidir o rolê de hoje?
-            </motion.h2>
-            <motion.p variants={fadeUp} style={s.finalCtaSub}>
-              Grátis, rápido e sem burocracia. Cria em 30 segundos.
-            </motion.p>
-            <motion.button
-              variants={fadeUp}
-              style={s.btnPrimaryLg}
-              onClick={() => navigate('/auth')}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              Criar conta grátis <ArrowRight size={18} />
-            </motion.button>
-          </motion.div>
-        </div>
+      {/* ── FINAL CTA ── */}
+      <section style={s.cta}>
+        <motion.div
+          style={s.ctaInner}
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.5 }}
+        >
+          <p style={s.ctaEye}>Pronto pra isso?</p>
+          <h2 style={s.ctaTitle}>Decide o rolê de hoje.</h2>
+          <button style={s.btnBlack} onClick={() => navigate('/auth')}>
+            Criar conta grátis <ArrowRight size={16} />
+          </button>
+        </motion.div>
       </section>
 
-      {/* ── 9. FOOTER ── */}
+      {/* ── FOOTER ── */}
       <footer style={s.footer}>
-        <div style={s.footerInner}>
-          <span style={s.footerLogo}>hangr</span>
-          <p style={s.footerText}>© 2025 Hangr · Feito pra quem não consegue decidir</p>
-        </div>
+        <span style={s.footerLogo}>hangr</span>
+        <span style={s.footerText}>© 2025</span>
       </footer>
     </div>
   )
@@ -273,477 +169,187 @@ export default function LandingPage() {
 
 /* ─── Styles ─────────────────────────────────────────────────────────── */
 const s = {
-  root: {
-    minHeight: '100vh',
-    overflowX: 'hidden',
-  },
+  root: { minHeight: '100vh', overflowX: 'hidden' },
 
   /* Nav */
   nav: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    height: '64px',
-    background: 'rgba(15,15,18,0.7)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
-  },
-  navInner: {
-    maxWidth: '1100px',
-    margin: '0 auto',
-    height: '100%',
-    padding: '0 24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+    height: 60,
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '0 28px',
+    background: 'rgba(10,10,10,0.85)',
+    backdropFilter: 'blur(16px)',
+    borderBottom: '1px solid var(--line)',
   },
   logo: {
-    fontSize: '22px',
-    fontWeight: 900,
-    letterSpacing: '-0.04em',
-    background: 'linear-gradient(135deg, #A78BFA, #818CF8)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
+    fontSize: 18, fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--lime)',
   },
-  navLinks: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
+  navRight: { display: 'flex', alignItems: 'center', gap: 8 },
   navLink: {
-    fontSize: '14px',
-    color: 'var(--text-muted)',
-    padding: '8px 14px',
-    borderRadius: 'var(--radius-full)',
-    transition: 'color 0.2s',
+    padding: '7px 14px', fontSize: 13, color: 'var(--text-2)',
+    borderRadius: 'var(--r-full)', border: '1px solid var(--line)',
   },
-
-  /* Buttons */
-  btnPrimary: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '10px 20px',
-    background: 'var(--gradient)',
-    color: '#fff',
-    fontWeight: 700,
-    fontSize: '14px',
-    borderRadius: 'var(--radius-full)',
-    boxShadow: 'var(--shadow-primary)',
-    transition: 'opacity 0.2s, transform 0.15s',
-    cursor: 'pointer',
-  },
-  btnPrimaryLg: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '16px 36px',
-    background: 'var(--gradient)',
-    color: '#fff',
-    fontWeight: 700,
-    fontSize: '16px',
-    borderRadius: 'var(--radius-full)',
-    boxShadow: '0 12px 40px rgba(139,92,246,0.5)',
-    cursor: 'pointer',
-  },
-  btnGhost: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '10px 20px',
-    color: 'var(--text-muted)',
-    fontWeight: 500,
-    fontSize: '14px',
-    borderRadius: 'var(--radius-full)',
-    border: '1px solid var(--border)',
-    cursor: 'pointer',
-    background: 'transparent',
+  navCta: {
+    display: 'flex', alignItems: 'center', gap: 5,
+    padding: '7px 16px', fontSize: 13, fontWeight: 600,
+    background: 'var(--text)', color: '#000',
+    borderRadius: 'var(--r-full)',
   },
 
   /* Hero */
   hero: {
-    position: 'relative',
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    paddingTop: '64px',
-    overflow: 'hidden',
+    minHeight: '100vh', paddingTop: 60,
+    display: 'flex', alignItems: 'center',
+    position: 'relative', overflow: 'hidden',
   },
-  heroBg: {
-    position: 'absolute',
-    top: '10%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '800px',
-    height: '800px',
-    background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)',
-    pointerEvents: 'none',
+  starburst: {
+    position: 'absolute', top: '5%', right: '-5%',
+    fontSize: 'clamp(200px, 35vw, 480px)',
+    color: 'var(--lime)', opacity: 0.06,
+    lineHeight: 1, userSelect: 'none', pointerEvents: 'none',
+    fontWeight: 900,
   },
   heroInner: {
-    maxWidth: '1100px',
-    margin: '0 auto',
-    padding: '80px 24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '60px',
-    width: '100%',
+    maxWidth: 1100, margin: '0 auto', width: '100%',
+    padding: '80px 28px',
+    display: 'flex', alignItems: 'center',
+    justifyContent: 'space-between', gap: 60,
     flexWrap: 'wrap',
   },
-  heroContent: {
-    flex: '1 1 420px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-    maxWidth: '540px',
-  },
-  heroBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '6px 14px',
-    borderRadius: 'var(--radius-full)',
-    background: 'rgba(250,204,21,0.1)',
-    border: '1px solid rgba(250,204,21,0.2)',
-    color: 'var(--warning)',
-    fontSize: '13px',
-    fontWeight: 600,
-    width: 'fit-content',
+  heroLeft: {
+    flex: '1 1 360px', maxWidth: 520,
+    display: 'flex', flexDirection: 'column', gap: 28,
   },
   heroTitle: {
-    fontSize: 'clamp(36px, 5vw, 58px)',
+    fontSize: 'clamp(52px, 7vw, 88px)',
     fontWeight: 900,
-    lineHeight: 1.08,
-    letterSpacing: '-0.03em',
+    letterSpacing: '-0.04em',
+    lineHeight: 0.95,
     color: '#fff',
   },
   heroSub: {
-    fontSize: '18px',
-    color: 'var(--text-muted)',
-    lineHeight: 1.7,
-    maxWidth: '460px',
+    fontSize: 18, color: 'var(--text-2)', lineHeight: 1.65, maxWidth: 400,
   },
-  heroCtas: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    flexWrap: 'wrap',
+  btnWhite: {
+    display: 'inline-flex', alignItems: 'center', gap: 8,
+    padding: '14px 28px',
+    background: '#fff', color: '#000',
+    fontWeight: 700, fontSize: 15,
+    borderRadius: 'var(--r-full)',
+    width: 'fit-content',
   },
 
-  /* Phone mockup */
-  phoneMockup: {
+  /* Match card */
+  matchCard: {
     flex: '0 0 auto',
-    display: 'flex',
-    justifyContent: 'center',
+    width: 260,
+    background: 'var(--lime)',
+    borderRadius: 'var(--r-2xl)',
+    padding: '28px 24px',
+    display: 'flex', flexDirection: 'column', gap: 14,
   },
-  phone: {
-    width: '240px',
-    background: '#1A1A1F',
-    borderRadius: '40px',
-    border: '1.5px solid rgba(139,92,246,0.3)',
-    boxShadow: '0 0 60px rgba(139,92,246,0.2), 0 40px 80px rgba(0,0,0,0.6)',
-    overflow: 'hidden',
-    padding: '0 0 20px',
-  },
-  phoneNotch: {
-    width: '72px',
-    height: '6px',
-    background: '#2A2A33',
-    borderRadius: 'var(--radius-full)',
-    margin: '14px auto 0',
-  },
-  phoneScreen: {
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
-  mockupHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '4px',
-  },
-  mockupLogo: {
-    fontSize: '14px',
-    fontWeight: 900,
-    letterSpacing: '-0.04em',
-    background: 'linear-gradient(135deg, #A78BFA, #818CF8)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-  },
-  mockupAvatars: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  mockupAvatar: {
-    width: '20px',
-    height: '20px',
-    borderRadius: '50%',
-    border: '2px solid #1A1A1F',
-  },
-  mockupMatch: {
-    background: 'rgba(139,92,246,0.12)',
-    border: '1px solid rgba(139,92,246,0.2)',
-    borderRadius: '14px',
-    padding: '12px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-  },
-  matchBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    color: 'var(--warning)',
-    fontSize: '10px',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '0.06em',
+  matchEye: {
+    fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: 'rgba(0,0,0,0.5)',
   },
   matchTitle: {
-    fontSize: '14px',
-    fontWeight: 700,
-    color: '#fff',
+    fontSize: 30, fontWeight: 900, letterSpacing: '-0.04em',
+    lineHeight: 1.05, color: '#000',
   },
-  matchSub: {
-    fontSize: '11px',
-    color: 'var(--text-muted)',
+  matchDivider: { height: 1, background: 'rgba(0,0,0,0.15)' },
+  matchPlace: { display: 'flex', alignItems: 'center', gap: 10 },
+  matchPlaceIcon: { fontSize: 22 },
+  matchPlaceName: { fontSize: 13, fontWeight: 700, color: '#000' },
+  matchPlaceInfo: { fontSize: 11, color: 'rgba(0,0,0,0.5)', marginTop: 2 },
+  matchAvatars: { display: 'flex', alignItems: 'center', gap: 6 },
+  matchAvatar: {
+    width: 26, height: 26, borderRadius: '50%',
   },
-  mockupPlace: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    background: 'var(--bg-card)',
-    borderRadius: '12px',
-    padding: '10px',
-    border: '1px solid var(--border)',
-  },
-  placeIcon: {
-    fontSize: '20px',
-    lineHeight: 1,
-  },
-  placeName: {
-    fontSize: '11px',
-    fontWeight: 600,
-    color: '#fff',
-  },
-  placeInfo: {
-    fontSize: '10px',
-    color: 'var(--text-subtle)',
-    marginTop: '1px',
-  },
-  placeScore: {
-    marginLeft: 'auto',
-    background: 'rgba(139,92,246,0.15)',
-    color: 'var(--primary-light)',
-    borderRadius: 'var(--radius-full)',
-    padding: '3px 8px',
-    fontSize: '10px',
-    fontWeight: 700,
-  },
-  mockupBtn: {
-    width: '100%',
-    padding: '10px',
-    background: 'var(--gradient)',
-    color: '#fff',
-    fontWeight: 700,
-    fontSize: '11px',
-    borderRadius: '10px',
-    marginTop: '4px',
-    cursor: 'pointer',
-  },
+  matchAvatarsText: { fontSize: 12, fontWeight: 600, color: '#000', marginLeft: 4 },
 
   /* Problem */
   problem: {
     padding: '100px 0',
-    background: 'var(--bg-alt)',
-    borderTop: '1px solid var(--border)',
-    borderBottom: '1px solid var(--border)',
+    borderTop: '1px solid var(--line)',
   },
-  container: {
-    maxWidth: '800px',
-    margin: '0 auto',
-    padding: '0 24px',
-  },
-  problemInner: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-    gap: '20px',
-  },
-  problemEyebrow: {
-    fontSize: '12px',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
-    color: 'var(--primary-light)',
+  container: { maxWidth: 700, margin: '0 auto', padding: '0 28px' },
+  eyebrow: {
+    fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
+    textTransform: 'uppercase', color: 'var(--text-3)',
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 'clamp(26px, 4vw, 40px)',
-    fontWeight: 800,
-    letterSpacing: '-0.03em',
-    lineHeight: 1.15,
-    marginBottom: '8px',
+    fontSize: 'clamp(28px, 4vw, 44px)',
+    fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1,
+    marginBottom: 40,
   },
-  bubbles: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    width: '100%',
-    maxWidth: '460px',
-    textAlign: 'left',
+  quoteList: { display: 'flex', flexDirection: 'column' },
+  quoteRow: {
+    padding: '18px 0',
+    borderBottom: '1px solid var(--line)',
   },
-  bubble: {
-    padding: '12px 18px',
-    fontSize: '15px',
-    color: 'var(--text-muted)',
-    border: '1px solid var(--border)',
-    maxWidth: '80%',
+  quoteText: { fontSize: 18, color: 'var(--text-2)', fontStyle: 'italic' },
+  problemAnswer: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    marginTop: 36, fontSize: 16, fontWeight: 600, color: '#fff',
   },
-  problemResolution: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    width: '100%',
-    maxWidth: '420px',
-    marginTop: '8px',
-  },
-  resolutionLine: {
-    flex: 1,
-    height: '1px',
-    background: 'var(--border)',
-  },
-  resolutionBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '8px 16px',
-    borderRadius: 'var(--radius-full)',
-    background: 'rgba(250,204,21,0.1)',
-    border: '1px solid rgba(250,204,21,0.2)',
-    color: 'var(--warning)',
-    fontSize: '13px',
-    fontWeight: 600,
-    whiteSpace: 'nowrap',
+  problemAnswerTag: {
+    padding: '4px 10px', background: 'var(--lime)', color: '#000',
+    fontSize: 10, fontWeight: 800, letterSpacing: '0.1em',
+    borderRadius: 'var(--r-sm)', flexShrink: 0,
   },
 
-  /* Features */
-  features: {
+  /* How it works */
+  how: {
     padding: '100px 0',
+    borderTop: '1px solid var(--line)',
   },
-  featureGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-    gap: '20px',
-    marginTop: '48px',
-  },
-  featureCard: {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-xl)',
-    padding: '28px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    position: 'relative',
-    overflow: 'hidden',
-    cursor: 'default',
-  },
-  featureIcon: {
-    width: '52px',
-    height: '52px',
-    borderRadius: 'var(--radius-md)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+  featureRow: {
+    display: 'flex', alignItems: 'flex-start', gap: 32,
+    padding: '28px 0',
+    borderBottom: '1px solid var(--line)',
   },
   featureNum: {
-    fontSize: '11px',
-    fontWeight: 700,
-    color: 'var(--text-subtle)',
-    letterSpacing: '0.08em',
-    marginTop: '4px',
+    fontSize: 12, fontWeight: 700, color: 'var(--text-3)',
+    letterSpacing: '0.08em', paddingTop: 3, flexShrink: 0, width: 28,
   },
-  featureTitle: {
-    fontSize: '18px',
-    fontWeight: 700,
-    color: '#fff',
-  },
-  featureDesc: {
-    fontSize: '14px',
-    color: 'var(--text-muted)',
-    lineHeight: 1.7,
-  },
+  featureBody: { flex: 1 },
+  featureTitle: { fontSize: 18, fontWeight: 700, marginBottom: 6 },
+  featureDesc: { fontSize: 14, color: 'var(--text-2)', lineHeight: 1.65 },
 
   /* Final CTA */
-  finalCta: {
-    position: 'relative',
-    padding: '120px 0',
-    background: 'var(--bg-alt)',
-    borderTop: '1px solid var(--border)',
-    overflow: 'hidden',
+  cta: {
+    background: 'var(--lime)',
+    padding: '80px 28px',
   },
-  finalCtaGlow: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: '600px',
-    height: '400px',
-    background: 'radial-gradient(ellipse, rgba(139,92,246,0.15) 0%, transparent 70%)',
-    pointerEvents: 'none',
+  ctaInner: {
+    maxWidth: 700, margin: '0 auto',
+    display: 'flex', flexDirection: 'column', gap: 20,
   },
-  finalCtaInner: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-    gap: '20px',
-    position: 'relative',
+  ctaEye: {
+    fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
+    textTransform: 'uppercase', color: 'rgba(0,0,0,0.45)',
   },
-  finalCtaTitle: {
-    fontSize: 'clamp(28px, 4vw, 48px)',
-    fontWeight: 900,
-    letterSpacing: '-0.03em',
-    lineHeight: 1.1,
+  ctaTitle: {
+    fontSize: 'clamp(32px, 5vw, 56px)',
+    fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1, color: '#000',
   },
-  finalCtaSub: {
-    fontSize: '16px',
-    color: 'var(--text-muted)',
+  btnBlack: {
+    display: 'inline-flex', alignItems: 'center', gap: 8,
+    padding: '14px 28px',
+    background: '#000', color: '#fff',
+    fontWeight: 700, fontSize: 15,
+    borderRadius: 'var(--r-full)',
+    width: 'fit-content', marginTop: 8,
   },
 
   /* Footer */
   footer: {
-    borderTop: '1px solid var(--border)',
-    padding: '32px 24px',
-  },
-  footerInner: {
-    maxWidth: '1100px',
-    margin: '0 auto',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: '12px',
+    padding: '24px 28px',
+    borderTop: '1px solid var(--line)',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
   },
   footerLogo: {
-    fontSize: '18px',
-    fontWeight: 900,
-    letterSpacing: '-0.04em',
-    background: 'linear-gradient(135deg, #A78BFA, #818CF8)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
+    fontSize: 15, fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--lime)',
   },
-  footerText: {
-    fontSize: '13px',
-    color: 'var(--text-subtle)',
-  },
+  footerText: { fontSize: 12, color: 'var(--text-3)' },
 }
