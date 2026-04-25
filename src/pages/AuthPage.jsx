@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, User, Mail, Loader2 } from 'lucide-react'
@@ -17,11 +17,14 @@ export default function AuthPage() {
   const [cidade, setCidade]     = useState('')
   const [erro, setErro]         = useState('')
   const [carregando, setCarregando] = useState(false)
+  const enviando = useRef(false)
 
   async function handleCriar() {
+    if (enviando.current) return
     setErro('')
     if (!nome.trim() || !email.trim() || !cidade.trim()) { setErro('Preencha todos os campos.'); return }
     if (!email.includes('@')) { setErro('Email inválido.'); return }
+    enviando.current = true
     try {
       setCarregando(true)
       const usuario = await criarUsuario({ nome, email, cidade })
@@ -31,6 +34,7 @@ export default function AuthPage() {
       setErro(err.message || 'Algo deu errado. Tenta de novo.')
     } finally {
       setCarregando(false)
+      enviando.current = false
     }
   }
 
