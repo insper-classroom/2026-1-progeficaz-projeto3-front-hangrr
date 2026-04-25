@@ -4,6 +4,8 @@ import AuthPage from './pages/AuthPage'
 import OnboardingPage from './pages/OnboardingPage'
 import HomePage from './pages/HomePage'
 import CreatePartyPage from './pages/CreatePartyPage'
+import ProfilePage from './pages/ProfilePage'
+import HistoricoPage from './pages/HistoricoPage'
 
 export default function App() {
   return (
@@ -14,6 +16,8 @@ export default function App() {
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/party/criar" element={<CreatePartyPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/historico" element={<HistoricoPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

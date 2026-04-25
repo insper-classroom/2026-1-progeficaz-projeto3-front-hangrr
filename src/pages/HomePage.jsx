@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Plus, Link2, User, Home, Compass } from 'lucide-react'
+import { Plus, Link2, Compass, User } from 'lucide-react'
+import BottomNav from '../components/BottomNav'
 
 const enter = (delay = 0) => ({
   hidden: { opacity: 0, y: 20 },
@@ -25,7 +26,7 @@ export default function HomePage() {
 
       {/* ── NAV ── */}
       <nav style={s.nav}>
-        <span style={s.logo}>hangr</span>
+        <span style={{ ...s.logo, cursor: 'pointer' }} onClick={() => navigate('/home')}>hangr</span>
         <button style={s.avatarBtn}><User size={16} /></button>
       </nav>
 
@@ -45,7 +46,7 @@ export default function HomePage() {
           <motion.button
             variants={enter(0.14)}
             style={s.ctaPrimary}
-            onClick={() => navigate('/party/create')}
+            onClick={() => navigate('/party/criar')}
             whileTap={{ scale: 0.97 }}
           >
             <Plus size={18} strokeWidth={2.5} /> Nova party
@@ -83,17 +84,12 @@ export default function HomePage() {
           transition={{ duration: 0.4, delay: 0.3 }}
         >
           <p style={s.sectionLabel}>Suas parties</p>
-          <EmptyParties onCriar={() => navigate('/party/create')} />
+          <EmptyParties onCriar={() => navigate('/party/criar')} />
         </motion.div>
 
       </div>
 
-      {/* ── BOTTOM NAV ── */}
-      <nav style={s.bottomNav}>
-        <NavItem icon={<Home size={20} />} label="Início" active />
-        <NavItem icon={<Compass size={20} />} label="Explorar" />
-        <NavItem icon={<User size={20} />} label="Perfil" />
-      </nav>
+      <BottomNav />
     </div>
   )
 }
@@ -131,17 +127,6 @@ function EmptyParties({ onCriar }) {
         <Plus size={14} /> Criar party
       </button>
     </div>
-  )
-}
-
-function NavItem({ icon, label, active }) {
-  return (
-    <button style={s.navItem}>
-      <span style={{ color: active ? 'var(--lime)' : 'var(--text-3)' }}>{icon}</span>
-      <span style={{ fontSize: 10, fontWeight: 600, color: active ? 'var(--lime)' : 'var(--text-3)', marginTop: 3 }}>
-        {label}
-      </span>
-    </button>
   )
 }
 
@@ -222,17 +207,4 @@ const s = {
     borderRadius: 'var(--r-full)', border: 'none', cursor: 'pointer',
   },
 
-  bottomNav: {
-    position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-    display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-    padding: '12px 0 20px',
-    background: 'rgba(10,10,10,0.95)',
-    backdropFilter: 'blur(20px)',
-    borderTop: '1px solid var(--line)',
-  },
-  navItem: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    gap: 0, padding: '6px 20px', cursor: 'pointer',
-    background: 'none', border: 'none',
-  },
 }
