@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Copy, Check, Loader2, Users, X, Pencil } from 'lucide-react'
-import { getParty, listarMembros, verificouVoto, votarParty, calcularMatch, atualizarNicknameMembro } from '../services/api'
+import { getParty, listarMembros, verificouVoto, votarParty, calcularMatch, atualizarNicknameMembro, kickarMembro } from '../services/api'
 
 const CATS = [
   { slug: 'restaurantes', nome: 'Restaurantes', emoji: '🍽️', cor: '#CCFF00', corTexto: '#000' },
@@ -43,11 +43,13 @@ export default function PartyPage() {
   const [editingNick, setEditingNick] = useState(false)
   const [nickValue, setNickValue]     = useState('')
   const [savingNick, setSavingNick]   = useState(false)
+  const [kickingId, setKickingId]     = useState(null)
 
   const enviandoRef = useRef(false)
   const nickInputRef = useRef(null)
 
   const meuMembro = membros.find(m => m.usuario_id === usuario._id)
+  const souHost   = meuMembro?.papel === 'host'
 
   useEffect(() => {
     if (!usuario._id) { navigate('/auth'); return }
@@ -115,6 +117,19 @@ export default function PartyPage() {
       n.has(slug) ? n.delete(slug) : n.add(slug)
       return n
     })
+  }
+
+  async function kickar(membro) {
+    if (kickingId || !souHost) return
+    setKickingId(membro._id)
+    try {
+      await kickarMembro(membro._id, usuario._id)
+      setMembros(prev => prev.filter(m => m._id !== membro._id))
+    } catch {
+      // silently fail
+    } finally {
+      setKickingId(null)
+    }
   }
 
   function getDisplayName(membro) {
@@ -367,6 +382,19 @@ export default function PartyPage() {
                       {membro.papel === 'host' && (
                         <span style={s.hostBadge}>host</span>
                       )}
+
+                      {souHost && !isMe && (
+                        <button
+                          style={{ ...s.kickBtn, opacity: kickingId === membro._id ? 0.5 : 1 }}
+                          onClick={() => kickar(membro)}
+                          disabled={!!kickingId}
+                          title="Remover da party"
+                        >
+                          {kickingId === membro._id
+                            ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                            : <X size={12} />}
+                        </button>
+                      )}
                     </div>
                   )
                 })}
@@ -489,6 +517,12 @@ const s = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: 'var(--lime)', border: 'none', borderRadius: 'var(--r-md)',
     color: '#000', cursor: 'pointer',
+  },
+  kickBtn: {
+    width: 24, height: 24, flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'rgba(255,61,138,0.12)', border: '1px solid rgba(255,61,138,0.25)',
+    borderRadius: 'var(--r-full)', color: '#FF3D8A', cursor: 'pointer',
   },
   nickCancelBtn: {
     width: 26, height: 26, flexShrink: 0,

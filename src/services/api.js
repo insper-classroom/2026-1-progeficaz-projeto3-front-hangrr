@@ -86,6 +86,10 @@ export async function listarMembros(party_id) {
   return d.membros
 }
 
+export async function kickarMembro(id, host_id) {
+  return req(`/party_membros/${id}?host_id=${host_id}`, { method: 'DELETE' })
+}
+
 export async function atualizarNicknameMembro(id, nickname) {
   const d = await req(`/party_membros/${id}`, {
     method: 'PATCH',
