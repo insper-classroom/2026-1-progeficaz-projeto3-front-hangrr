@@ -69,6 +69,25 @@ export default function PartyPage() {
     if (editingNick && nickInputRef.current) nickInputRef.current.focus()
   }, [editingNick])
 
+  function salvarNoHistorico(partyData, membrosData, matchData) {
+    if (!matchData?.match) return
+    const entry = {
+      _id:       partyData._id,
+      titulo:    partyData.titulo,
+      cidade:    partyData.cidade,
+      criada_em: partyData.criada_em,
+      membros:   membrosData.length,
+      match:     matchData.match,
+    }
+    try {
+      const saved = JSON.parse(localStorage.getItem('hangr_historico') || '[]')
+      const idx = saved.findIndex(p => p._id === entry._id)
+      if (idx >= 0) saved[idx] = entry
+      else saved.unshift(entry)
+      localStorage.setItem('hangr_historico', JSON.stringify(saved.slice(0, 20)))
+    } catch {}
+  }
+
   async function carregar() {
     try {
       const partyData = await getParty(codigo)
@@ -79,6 +98,7 @@ export default function PartyPage() {
       if (jaVotou) {
         const m = await calcularMatch(codigo)
         setMatch(m)
+        salvarNoHistorico(partyData, partyData.membros || [], m)
         setView('result')
       } else {
         setView('voting')
@@ -101,6 +121,7 @@ export default function PartyPage() {
       })
       const m = await calcularMatch(codigo)
       setMatch(m)
+      salvarNoHistorico(party, membros, m)
       setView('result')
     } catch (err) {
       setErro(err.message || 'Erro ao votar.')
