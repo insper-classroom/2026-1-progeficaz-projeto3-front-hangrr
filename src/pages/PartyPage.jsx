@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Copy, Check, Loader2, Users, X, Pencil, MapPin } from 'lucide-react'
-import { getParty, listarMembros, verificouVoto, votarParty, calcularMatch, atualizarNicknameMembro, kickarMembro } from '../services/api'
+import { getParty, votarParty, calcularMatch, atualizarNicknameMembro, kickarMembro } from '../services/api'
 
 const CATS = [
   { slug: 'restaurantes', nome: 'Restaurantes', emoji: '🍽️', cor: '#CCFF00', corTexto: '#000' },
@@ -34,18 +34,18 @@ const AVATAR_PALETTE = [
 ]
 
 export default function PartyPage() {
-  const { id }    = useParams()
-  const navigate  = useNavigate()
-  const usuario   = JSON.parse(localStorage.getItem('hangr_user') || '{}')
+  const { codigo } = useParams()
+  const navigate   = useNavigate()
+  const usuario    = JSON.parse(localStorage.getItem('hangr_user') || '{}')
 
-  const [view, setView]       = useState('loading')
-  const [party, setParty]     = useState(null)
-  const [membros, setMembros] = useState([])
-  const [match, setMatch]     = useState(null)
-  const [selCats, setSelCats] = useState(new Set())
-  const [copiado, setCopiado] = useState(false)
+  const [view, setView]         = useState('loading')
+  const [party, setParty]       = useState(null)
+  const [membros, setMembros]   = useState([])
+  const [match, setMatch]       = useState(null)
+  const [selCats, setSelCats]   = useState(new Set())
+  const [copiado, setCopiado]   = useState(false)
   const [enviando, setEnviando] = useState(false)
-  const [erro, setErro]       = useState('')
+  const [erro, setErro]         = useState('')
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [editingNick, setEditingNick] = useState(false)
@@ -54,7 +54,7 @@ export default function PartyPage() {
   const [kickingId, setKickingId]     = useState(null)
   const [raio, setRaio]               = useState(2000)
 
-  const enviandoRef = useRef(false)
+  const enviandoRef  = useRef(false)
   const nickInputRef = useRef(null)
 
   const meuMembro = membros.find(m => m.usuario_id === usuario._id)
@@ -63,7 +63,7 @@ export default function PartyPage() {
   useEffect(() => {
     if (!usuario._id) { navigate('/auth'); return }
     carregar()
-  }, [id])
+  }, [codigo])
 
   useEffect(() => {
     if (editingNick && nickInputRef.current) nickInputRef.current.focus()
@@ -71,15 +71,13 @@ export default function PartyPage() {
 
   async function carregar() {
     try {
-      const [partyData, membrosData, votos] = await Promise.all([
-        getParty(id),
-        listarMembros(id),
-        verificouVoto({ party_id: id, usuario_id: usuario._id }),
-      ])
+      const partyData = await getParty(codigo)
       setParty(partyData)
-      setMembros(membrosData)
-      if (votos.length > 0) {
-        const m = await calcularMatch(id)
+      setMembros(partyData.membros || [])
+
+      const jaVotou = (partyData.votes || []).some(v => v.usuario_id === usuario._id)
+      if (jaVotou) {
+        const m = await calcularMatch(codigo)
         setMatch(m)
         setView('result')
       } else {
@@ -97,11 +95,11 @@ export default function PartyPage() {
     setErro('')
     try {
       await votarParty({
-        party_id: id,
+        codigo,
         usuario_id: usuario._id,
         categorias: [...selCats].map(slug => ({ slug, tipo: 'like', forca: 1 })),
       })
-      const m = await calcularMatch(id)
+      const m = await calcularMatch(codigo)
       setMatch(m)
       setView('result')
     } catch (err) {
@@ -130,10 +128,10 @@ export default function PartyPage() {
 
   async function kickar(membro) {
     if (kickingId || !souHost) return
-    setKickingId(membro._id)
+    setKickingId(membro.usuario_id)
     try {
-      await kickarMembro(membro._id, usuario._id)
-      setMembros(prev => prev.filter(m => m._id !== membro._id))
+      await kickarMembro(codigo, membro.usuario_id, usuario._id)
+      setMembros(prev => prev.filter(m => m.usuario_id !== membro.usuario_id))
     } catch {
       // silently fail
     } finally {
@@ -157,8 +155,10 @@ export default function PartyPage() {
     const trimmed = nickValue.trim()
     setSavingNick(true)
     try {
-      const updated = await atualizarNicknameMembro(meuMembro._id, trimmed)
-      setMembros(prev => prev.map(m => m._id === updated._id ? { ...m, nickname: updated.nickname, nome: updated.nome } : m))
+      const updated = await atualizarNicknameMembro(codigo, meuMembro.usuario_id, trimmed)
+      setMembros(prev => prev.map(m =>
+        m.usuario_id === updated.usuario_id ? { ...m, nickname: updated.nickname } : m
+      ))
       setEditingNick(false)
     } catch {
       // keep editing open on failure
@@ -289,7 +289,7 @@ export default function PartyPage() {
 
               <motion.button
                 style={s.explorarBtn}
-                onClick={() => navigate(`/party/${id}/explorar/${match.match}?raio=${raio}`)}
+                onClick={() => navigate(`/party/${codigo}/explorar/${match.match}?raio=${raio}`)}
                 whileTap={{ scale: 0.97 }}
               >
                 <MapPin size={15} />
@@ -353,7 +353,6 @@ export default function PartyPage() {
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 32, stiffness: 320 }}
             >
-              {/* Header */}
               <div style={s.sidebarHeader}>
                 <span style={s.sidebarTitle}>Participantes</span>
                 <button style={s.sidebarCloseBtn} onClick={() => { setSidebarOpen(false); setEditingNick(false) }}>
@@ -361,7 +360,6 @@ export default function PartyPage() {
                 </button>
               </div>
 
-              {/* List */}
               <div style={s.sidebarList}>
                 {membros.map((membro, i) => {
                   const palette   = AVATAR_PALETTE[i % AVATAR_PALETTE.length]
@@ -370,13 +368,11 @@ export default function PartyPage() {
                   const isEditing = isMe && editingNick
 
                   return (
-                    <div key={membro._id} style={s.memberRow}>
-                      {/* Avatar */}
+                    <div key={membro.usuario_id} style={s.memberRow}>
                       <div style={{ ...s.avatar, background: palette.bg, color: palette.text }}>
                         {display[0]?.toUpperCase()}
                       </div>
 
-                      {/* Name / edit */}
                       <div style={s.memberInfo}>
                         {isEditing ? (
                           <div style={s.nickEditRow}>
@@ -419,12 +415,12 @@ export default function PartyPage() {
 
                       {souHost && !isMe && (
                         <button
-                          style={{ ...s.kickBtn, opacity: kickingId === membro._id ? 0.5 : 1 }}
+                          style={{ ...s.kickBtn, opacity: kickingId === membro.usuario_id ? 0.5 : 1 }}
                           onClick={() => kickar(membro)}
                           disabled={!!kickingId}
                           title="Remover da party"
                         >
-                          {kickingId === membro._id
+                          {kickingId === membro.usuario_id
                             ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
                             : <X size={12} />}
                         </button>
@@ -500,7 +496,6 @@ const s = {
   explorarBtn: { width: '100%', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', color: 'var(--text-1)', fontWeight: 700, fontSize: 15, borderRadius: 'var(--r-full)', cursor: 'pointer', marginBottom: 16 },
   revoteBtn: { fontSize: 13, fontWeight: 700, color: 'var(--text-3)', background: 'none', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', padding: '8px 18px', cursor: 'pointer' },
 
-  // Sidebar
   backdrop: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40 },
   sidebar: {
     position: 'fixed', top: 0, right: 0, bottom: 0,
@@ -522,10 +517,7 @@ const s = {
   },
   sidebarList: { flex: 1, overflowY: 'auto', padding: '10px 0' },
 
-  memberRow: {
-    display: 'flex', alignItems: 'center', gap: 10,
-    padding: '10px 16px',
-  },
+  memberRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px' },
   avatar: {
     width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
     display: 'flex', alignItems: 'center', justifyContent: 'center',

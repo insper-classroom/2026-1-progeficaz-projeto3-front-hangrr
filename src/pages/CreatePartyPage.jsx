@@ -40,14 +40,14 @@ export default function CreatePartyPage() {
       })
       const geo = geoRef.current
       await adicionarMembro({
-        party_id:   party._id,
+        codigo:     party.codigo_convite,
         usuario_id: usuario._id,
         papel:      'host',
         lat:        geo?.lat      ?? null,
         lng:        geo?.lng      ?? null,
         accuracy:   geo?.accuracy ?? null,
       })
-      navigate(`/party/${party._id}`)
+      navigate(`/party/${party.codigo_convite}`)
     } catch (err) {
       setErro(err.message || 'Erro ao criar party.')
     } finally {

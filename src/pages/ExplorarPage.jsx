@@ -26,7 +26,7 @@ const RAIOS = [
 const GPS_THRESHOLD = 200
 
 export default function ExplorarPage() {
-  const { id, slug }    = useParams()
+  const { codigo, slug } = useParams()
   const navigate        = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -46,7 +46,7 @@ export default function ExplorarPage() {
   // Na abertura: pega localização fresca → busca
   useEffect(() => {
     iniciar()
-  }, [id, slug])
+  }, [codigo, slug])
 
   // Quando raio muda: rebusca com localização já conhecida
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function ExplorarPage() {
   async function carregar(geo, r) {
     setStatus('loading')
     try {
-      const data = await buscarLugares(id, slug, r, geo)
+      const data = await buscarLugares(codigo, slug, r, geo)
       setLugares(data.lugares || [])
       setCidade(data.cidade || '')
       setModoGeo(data.modo_busca || 'cidade')

@@ -55,15 +55,13 @@ export async function criarParty({ titulo, criada_por, cidade, codigo_convite })
   return d.party
 }
 
-export async function getParty(id) {
-  const d = await req(`/parties/${id}`)
+export async function getParty(codigo) {
+  const d = await req(`/parties/${codigo}`)
   return d.party
 }
 
-export async function getPartyByCodigo(codigo) {
-  const d = await req(`/parties/codigo/${codigo}`)
-  return d.party
-}
+// alias kept for JoinPartyPage
+export const getPartyByCodigo = getParty
 
 export async function listarPartiesUsuario(usuario_id) {
   const d = await req(`/parties?usuario_id=${usuario_id}`)
@@ -72,26 +70,21 @@ export async function listarPartiesUsuario(usuario_id) {
 
 // ── Membros ───────────────────────────────────────────────────────────────
 
-export async function adicionarMembro({ party_id, usuario_id, papel = 'member', lat = null, lng = null, accuracy = null }) {
-  const d = await req('/party_membros', {
+export async function adicionarMembro({ codigo, usuario_id, papel = 'member', lat = null, lng = null, accuracy = null }) {
+  const d = await req(`/parties/${codigo}/membros`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ party_id, usuario_id, papel, lat, lng, accuracy }),
+    body: JSON.stringify({ usuario_id, papel, lat, lng, accuracy }),
   })
   return d.membro
 }
 
-export async function listarMembros(party_id) {
-  const d = await req(`/party_membros?party_id=${party_id}`)
-  return d.membros
+export async function kickarMembro(codigo, usuario_id, host_id) {
+  return req(`/parties/${codigo}/membros/${usuario_id}?host_id=${host_id}`, { method: 'DELETE' })
 }
 
-export async function kickarMembro(id, host_id) {
-  return req(`/party_membros/${id}?host_id=${host_id}`, { method: 'DELETE' })
-}
-
-export async function atualizarNicknameMembro(id, nickname) {
-  const d = await req(`/party_membros/${id}`, {
+export async function atualizarNicknameMembro(codigo, usuario_id, nickname) {
+  const d = await req(`/parties/${codigo}/membros/${usuario_id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ nickname }),
@@ -101,32 +94,24 @@ export async function atualizarNicknameMembro(id, nickname) {
 
 // ── Votos ─────────────────────────────────────────────────────────────────
 
-export async function verificouVoto({ party_id, usuario_id }) {
-  const d = await req(`/party_preferencias?party_id=${party_id}&usuario_id=${usuario_id}`)
-  return d.preferencias
-}
-
-export async function votarParty({ party_id, usuario_id, categorias }) {
-  return req('/party_preferencias', {
+export async function votarParty({ codigo, usuario_id, categorias }) {
+  return req(`/parties/${codigo}/votes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ party_id, usuario_id, categorias }),
+    body: JSON.stringify({ usuario_id, categorias }),
   })
+}
+
+export async function calcularMatch(codigo) {
+  return req(`/parties/${codigo}/match`)
 }
 
 // ── Explorar ──────────────────────────────────────────────────────────────
 
-export async function buscarLugares(party_id, slug, raio = 2000, geo = null) {
-  let url = `/lugares?party_id=${party_id}&slug=${slug}&raio=${raio}`
+export async function buscarLugares(codigo, slug, raio = 2000, geo = null) {
+  let url = `/lugares?codigo=${codigo}&slug=${slug}&raio=${raio}`
   if (geo?.lat != null && geo?.lng != null) {
     url += `&lat=${geo.lat}&lng=${geo.lng}&accuracy=${geo.accuracy ?? 9999}`
   }
-  const d = await req(url)
-  return d
-}
-
-// ── Match ─────────────────────────────────────────────────────────────────
-
-export async function calcularMatch(party_id) {
-  return req(`/match/${party_id}`)
+  return req(url)
 }
