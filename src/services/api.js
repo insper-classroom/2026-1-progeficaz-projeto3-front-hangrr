@@ -86,6 +86,15 @@ export async function listarMembros(party_id) {
   return d.membros
 }
 
+export async function atualizarNicknameMembro(id, nickname) {
+  const d = await req(`/party_membros/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nickname }),
+  })
+  return d.membro
+}
+
 // ── Votos ─────────────────────────────────────────────────────────────────
 
 export async function verificouVoto({ party_id, usuario_id }) {
