@@ -106,6 +106,10 @@ export async function calcularMatch(codigo) {
   return req(`/parties/${codigo}/match`)
 }
 
+export async function encerrarParty(codigo, host_id) {
+  return req(`/parties/${codigo}/encerrar?host_id=${host_id}`, { method: 'PATCH' })
+}
+
 // ── Explorar ──────────────────────────────────────────────────────────────
 
 export async function buscarLugares(codigo, slug, raio = 2000, geo = null) {

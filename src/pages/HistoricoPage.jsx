@@ -16,8 +16,12 @@ export default function HistoricoPage() {
   useEffect(() => {
     const u = localStorage.getItem('hangr_user')
     if (!u) { navigate('/auth'); return }
-    const saved = localStorage.getItem('hangr_historico')
-    if (saved) setParties(JSON.parse(saved))
+    try {
+      const saved = localStorage.getItem('hangr_historico')
+      if (saved) setParties(JSON.parse(saved))
+    } catch {
+      localStorage.removeItem('hangr_historico')
+    }
   }, [navigate])
 
   return (

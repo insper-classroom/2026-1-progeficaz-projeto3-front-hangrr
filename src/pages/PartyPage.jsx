@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Copy, Check, Loader2, Users, X, Pencil, MapPin } from 'lucide-react'
-import { getParty, votarParty, calcularMatch, atualizarNicknameMembro, kickarMembro } from '../services/api'
+import { getParty, votarParty, calcularMatch, atualizarNicknameMembro, kickarMembro, encerrarParty } from '../services/api'
 
 const CATS = [
   { slug: 'restaurantes', nome: 'Restaurantes', emoji: '🍽️', cor: '#CCFF00', corTexto: '#000' },
@@ -51,8 +51,10 @@ export default function PartyPage() {
   const [editingNick, setEditingNick] = useState(false)
   const [nickValue, setNickValue]     = useState('')
   const [savingNick, setSavingNick]   = useState(false)
-  const [kickingId, setKickingId]     = useState(null)
-  const [raio, setRaio]               = useState(2000)
+  const [kickingId, setKickingId]         = useState(null)
+  const [raio, setRaio]                   = useState(2000)
+  const [confirmEncerrar, setConfirmEncerrar] = useState(false)
+  const [encerrando, setEncerrando]           = useState(false)
 
   const enviandoRef  = useRef(false)
   const nickInputRef = useRef(null)
@@ -69,23 +71,21 @@ export default function PartyPage() {
     if (editingNick && nickInputRef.current) nickInputRef.current.focus()
   }, [editingNick])
 
-  function salvarNoHistorico(partyData, membrosData, matchData) {
-    if (!matchData?.match) return
+  function salvarNoHistorico(partyData, membrosData, matchData = null) {
+    if (!partyData?._id) return
     const entry = {
       _id:       partyData._id,
       titulo:    partyData.titulo,
       cidade:    partyData.cidade,
       criada_em: partyData.criada_em,
-      membros:   membrosData.length,
-      match:     matchData.match,
+      membros:   Array.isArray(membrosData) ? membrosData.length : 0,
+      match:     matchData?.match || null,
     }
-    try {
-      const saved = JSON.parse(localStorage.getItem('hangr_historico') || '[]')
-      const idx = saved.findIndex(p => p._id === entry._id)
-      if (idx >= 0) saved[idx] = entry
-      else saved.unshift(entry)
-      localStorage.setItem('hangr_historico', JSON.stringify(saved.slice(0, 20)))
-    } catch {}
+    const saved = JSON.parse(localStorage.getItem('hangr_historico') || '[]')
+    const idx = saved.findIndex(p => p._id === entry._id)
+    if (idx >= 0) saved[idx] = entry
+    else saved.unshift(entry)
+    localStorage.setItem('hangr_historico', JSON.stringify(saved.slice(0, 20)))
   }
 
   async function carregar() {
@@ -185,6 +185,23 @@ export default function PartyPage() {
       // keep editing open on failure
     } finally {
       setSavingNick(false)
+    }
+  }
+
+  async function encerrar() {
+    if (!party?._id) return
+    setEncerrando(true)
+    try {
+      // Busca match atualizado antes de fechar (pode haver votos desde que a tela abriu)
+      let matchFinal = match
+      try { matchFinal = await calcularMatch(codigo) } catch {}
+
+      await encerrarParty(codigo, usuario._id)
+      salvarNoHistorico(party, membros, matchFinal)
+      navigate('/home')
+    } catch {
+      setEncerrando(false)
+      setConfirmEncerrar(false)
     }
   }
 
@@ -352,6 +369,35 @@ export default function PartyPage() {
           )}
 
         </AnimatePresence>
+
+        {/* ── Encerrar party (host only) ── */}
+        {souHost && (
+          <div style={s.encerrarWrap}>
+            {!confirmEncerrar ? (
+              <button style={s.encerrarBtn} onClick={() => setConfirmEncerrar(true)}>
+                Encerrar party
+              </button>
+            ) : (
+              <div style={s.encerrarConfirm}>
+                <p style={s.encerrarPergunta}>Encerrar de vez?</p>
+                <div style={s.encerrarActions}>
+                  <button
+                    style={{ ...s.encerrarSimBtn, opacity: encerrando ? 0.5 : 1 }}
+                    onClick={encerrar}
+                    disabled={encerrando}
+                  >
+                    {encerrando ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : null}
+                    Sim, encerrar
+                  </button>
+                  <button style={s.encerrarNaoBtn} onClick={() => setConfirmEncerrar(false)} disabled={encerrando}>
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* ── Participants Sidebar ── */}
@@ -582,5 +628,34 @@ const s = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-md)',
     color: 'var(--text-2)', cursor: 'pointer',
+  },
+
+  encerrarWrap: { borderTop: '1px solid var(--line)', paddingTop: 20, marginTop: 4 },
+  encerrarBtn: {
+    background: 'none', border: '1px solid rgba(255,69,69,0.25)',
+    borderRadius: 'var(--r-full)', color: 'rgba(255,100,100,0.7)',
+    fontSize: 13, fontWeight: 700, padding: '9px 20px', cursor: 'pointer',
+    width: '100%',
+  },
+  encerrarConfirm: {
+    display: 'flex', flexDirection: 'column', gap: 10,
+    padding: '14px 16px',
+    background: 'rgba(255,69,69,0.06)', border: '1px solid rgba(255,69,69,0.2)',
+    borderRadius: 'var(--r-xl)',
+  },
+  encerrarPergunta: { fontSize: 13, fontWeight: 700, color: 'rgba(255,120,120,0.9)' },
+  encerrarActions:  { display: 'flex', gap: 8 },
+  encerrarSimBtn: {
+    display: 'flex', alignItems: 'center', gap: 6,
+    flex: 1, padding: '10px', justifyContent: 'center',
+    background: 'rgba(255,69,69,0.15)', border: '1px solid rgba(255,69,69,0.35)',
+    borderRadius: 'var(--r-full)', color: '#ff6464',
+    fontSize: 13, fontWeight: 700, cursor: 'pointer',
+  },
+  encerrarNaoBtn: {
+    padding: '10px 18px',
+    background: 'var(--bg-2)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-full)', color: 'var(--text-2)',
+    fontSize: 13, fontWeight: 700, cursor: 'pointer',
   },
 }
