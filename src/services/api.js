@@ -22,6 +22,17 @@ export async function loginUsuario({ email, senha }) {
   return data.usuario
 }
 
+export async function atualizarUsuario(id, campos) {
+  const res = await fetch(`${API_URL}/usuarios/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(campos),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data?.erro || 'Erro ao atualizar usuário')
+  return data.usuario
+}
+
 export async function salvarPreferencias({ usuario_id, categorias }) {
   const res = await fetch(`${API_URL}/preferencias_usuario`, {
     method: 'POST',

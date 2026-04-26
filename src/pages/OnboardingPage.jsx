@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import LocationPicker from '../components/LocationPicker'
+import { atualizarUsuario } from '../services/api'
 
 /* ─── Data ───────────────────────────────────────────────────────────── */
 const GENEROS = [
@@ -34,9 +36,12 @@ const slide = {
 }
 
 /* ─── Page ───────────────────────────────────────────────────────────── */
+const TOTAL_STEPS = 4
+
 export default function OnboardingPage() {
   const navigate = useNavigate()
-  const [step, setStep]   = useState(0)
+  const [step, setStep]     = useState(0)
+  const [cidade, setCidade] = useState('')
   const [genero, setGenero] = useState(null)
   const [dob, setDob]       = useState('')
 
@@ -75,6 +80,15 @@ export default function OnboardingPage() {
   async function finalizar() {
     if (totalSel < MIN) return
     const usuario = JSON.parse(localStorage.getItem('hangr_user') || '{}')
+
+    try {
+      const atualizado = await atualizarUsuario(usuario._id, { cidade })
+      localStorage.setItem('hangr_user', JSON.stringify(atualizado))
+    } catch {
+      // salva só localmente se a request falhar
+      localStorage.setItem('hangr_user', JSON.stringify({ ...usuario, cidade }))
+    }
+
     localStorage.setItem('hangr_prefs', JSON.stringify({
       usuario_id: usuario._id,
       genero,
@@ -93,7 +107,7 @@ export default function OnboardingPage() {
       <div style={s.bar}>
         <motion.div
           style={s.barFill}
-          animate={{ width: `${((step + 1) / 3) * 100}%` }}
+          animate={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         />
       </div>
@@ -103,15 +117,25 @@ export default function OnboardingPage() {
         <button style={s.backBtn} onClick={back}>
           <ArrowLeft size={16} />
         </button>
-        <span style={s.stepNum}>{step + 1} / 3</span>
+        <span style={s.stepNum}>{step + 1} / {TOTAL_STEPS}</span>
       </div>
 
       {/* Steps */}
       <div style={s.body}>
         <AnimatePresence mode="wait">
 
-          {/* ── Gênero ── */}
+          {/* ── Cidade ── */}
           {step === 0 && (
+            <motion.div key="c" variants={slide} initial="hidden" animate="show" exit="exit" style={s.step}>
+              <p style={s.eye}>Onde você está</p>
+              <h1 style={s.title}>Qual é a sua<br />cidade?</h1>
+              <LocationPicker onCidadeChange={setCidade} />
+              <Btn label="Continuar" onClick={next} disabled={!cidade} />
+            </motion.div>
+          )}
+
+          {/* ── Gênero ── */}
+          {step === 1 && (
             <motion.div key="g" variants={slide} initial="hidden" animate="show" exit="exit" style={s.step}>
               <p style={s.eye}>Sobre você</p>
               <h1 style={s.title}>Como você<br />se identifica?</h1>
@@ -144,7 +168,7 @@ export default function OnboardingPage() {
           )}
 
           {/* ── Data de nascimento ── */}
-          {step === 1 && (
+          {step === 2 && (
             <motion.div key="d" variants={slide} initial="hidden" animate="show" exit="exit" style={s.step}>
               <p style={s.eye}>Sobre você</p>
               <h1 style={s.title}>Quando você<br />nasceu?</h1>
@@ -175,7 +199,7 @@ export default function OnboardingPage() {
           )}
 
           {/* ── Gostos ── */}
-          {step === 2 && (
+          {step === 3 && (
             <motion.div key="i" variants={slide} initial="hidden" animate="show" exit="exit" style={s.step}>
               <p style={s.eye}>Seus gostos</p>
               <h1 style={s.title}>O que você<br />curte fazer?</h1>
