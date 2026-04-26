@@ -52,7 +52,13 @@ export default function AuthPage() {
       } else {
         usuario = await loginUsuario({ email, senha })
         localStorage.setItem('hangr_user', JSON.stringify(usuario))
-        navigate('/home')
+        const pendingJoin = localStorage.getItem('hangr_join_pendente')
+        if (pendingJoin) {
+          localStorage.removeItem('hangr_join_pendente')
+          navigate(`/party/join/${pendingJoin}`)
+        } else {
+          navigate('/home')
+        }
       }
     } catch (err) {
       setErro(err.message || 'Algo deu errado. Tenta de novo.')

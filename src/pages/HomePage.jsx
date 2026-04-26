@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Plus, Link2, Compass, User } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Plus, Link2, Compass, User, ArrowRight } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 
 const enter = (delay = 0) => ({
@@ -11,7 +11,9 @@ const enter = (delay = 0) => ({
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const [usuario, setUsuario] = useState(null)
+  const [usuario, setUsuario]     = useState(null)
+  const [showJoin, setShowJoin]   = useState(false)
+  const [codigo, setCodigo]       = useState('')
 
   useEffect(() => {
     const u = localStorage.getItem('hangr_user')
@@ -65,8 +67,39 @@ export default function HomePage() {
             desc="Alguém te mandou um convite?"
             icon={<Link2 size={20} />}
             color="#3D8AFF"
-            onClick={() => {}}
+            onClick={() => setShowJoin(v => !v)}
           />
+
+          <AnimatePresence>
+            {showJoin && (
+              <motion.div
+                key="join"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div style={s.joinRow}>
+                  <input
+                    style={s.joinInput}
+                    placeholder="Código do convite (ex: ABC123)"
+                    value={codigo}
+                    onChange={e => setCodigo(e.target.value.toUpperCase())}
+                    onKeyDown={e => e.key === 'Enter' && codigo.trim() && navigate(`/party/join/${codigo.trim()}`)}
+                    autoFocus
+                  />
+                  <button
+                    style={{ ...s.joinBtn, opacity: codigo.trim() ? 1 : 0.4 }}
+                    disabled={!codigo.trim()}
+                    onClick={() => navigate(`/party/join/${codigo.trim()}`)}
+                  >
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <ActionCard
             label="Explorar lugares"
             desc="Veja sugestões perto de você"
@@ -199,6 +232,10 @@ const s = {
   emptyAsterisk: { fontSize: 40, color: 'var(--lime)', opacity: 0.4, lineHeight: 1, marginBottom: 4 },
   emptyTitle:    { fontSize: 16, fontWeight: 700 },
   emptyDesc:     { fontSize: 13, color: 'var(--text-2)' },
+  joinRow:   { display: 'flex', gap: 8, padding: '4px 0 8px' },
+  joinInput: { flex: 1, padding: '12px 14px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-lg)', color: '#fff', fontSize: 14, outline: 'none' },
+  joinBtn:   { width: 44, height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--lime)', color: '#000', border: 'none', borderRadius: 'var(--r-lg)', cursor: 'pointer' },
+
   emptyBtn: {
     display: 'flex', alignItems: 'center', gap: 6,
     marginTop: 12, padding: '10px 20px',
