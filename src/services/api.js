@@ -114,6 +114,13 @@ export async function votarParty({ party_id, usuario_id, categorias }) {
   })
 }
 
+// ── Explorar ──────────────────────────────────────────────────────────────
+
+export async function buscarLugares(party_id, slug) {
+  const d = await req(`/lugares?party_id=${party_id}&slug=${slug}`)
+  return d
+}
+
 // ── Match ─────────────────────────────────────────────────────────────────
 
 export async function calcularMatch(party_id) {

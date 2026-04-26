@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Copy, Check, Loader2, Users, X, Pencil } from 'lucide-react'
+import { ArrowLeft, Copy, Check, Loader2, Users, X, Pencil, MapPin } from 'lucide-react'
 import { getParty, listarMembros, verificouVoto, votarParty, calcularMatch, atualizarNicknameMembro, kickarMembro } from '../services/api'
 
 const CATS = [
@@ -262,6 +262,15 @@ export default function PartyPage() {
                 </p>
               </motion.div>
 
+              <motion.button
+                style={s.explorarBtn}
+                onClick={() => navigate(`/party/${id}/explorar/${match.match}`)}
+                whileTap={{ scale: 0.97 }}
+              >
+                <MapPin size={15} />
+                Explorar lugares
+              </motion.button>
+
               {match.ranking.length > 1 && (
                 <div style={s.ranking}>
                   <p style={s.rankingLabel}>Todos os votos</p>
@@ -458,6 +467,7 @@ const s = {
   rankBar:      { height: '100%', borderRadius: 'var(--r-full)', transition: 'width .4s ease' },
   rankVotos:    { fontSize: 12, fontWeight: 700, color: 'var(--text-3)', width: 20, textAlign: 'right', flexShrink: 0 },
 
+  explorarBtn: { width: '100%', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', color: 'var(--text-1)', fontWeight: 700, fontSize: 15, borderRadius: 'var(--r-full)', cursor: 'pointer', marginBottom: 16 },
   revoteBtn: { fontSize: 13, fontWeight: 700, color: 'var(--text-3)', background: 'none', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', padding: '8px 18px', cursor: 'pointer' },
 
   // Sidebar

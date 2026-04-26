@@ -8,21 +8,23 @@ import PartyPage       from './pages/PartyPage'
 import JoinPartyPage   from './pages/JoinPartyPage'
 import ProfilePage     from './pages/ProfilePage'
 import HistoricoPage   from './pages/HistoricoPage'
+import ExplorarPage    from './pages/ExplorarPage'
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/"                   element={<LandingPage />} />
-        <Route path="/auth"               element={<AuthPage />} />
-        <Route path="/onboarding"         element={<OnboardingPage />} />
-        <Route path="/home"               element={<HomePage />} />
-        <Route path="/party/criar"        element={<CreatePartyPage />} />
-        <Route path="/party/join/:codigo" element={<JoinPartyPage />} />
-        <Route path="/party/:id"          element={<PartyPage />} />
-        <Route path="/profile"            element={<ProfilePage />} />
-        <Route path="/historico"          element={<HistoricoPage />} />
-        <Route path="*"                   element={<Navigate to="/" replace />} />
+        <Route path="/"                          element={<LandingPage />} />
+        <Route path="/auth"                      element={<AuthPage />} />
+        <Route path="/onboarding"                element={<OnboardingPage />} />
+        <Route path="/home"                      element={<HomePage />} />
+        <Route path="/party/criar"               element={<CreatePartyPage />} />
+        <Route path="/party/join/:codigo"        element={<JoinPartyPage />} />
+        <Route path="/party/:id"                 element={<PartyPage />} />
+        <Route path="/party/:id/explorar/:slug"  element={<ExplorarPage />} />
+        <Route path="/profile"                   element={<ProfilePage />} />
+        <Route path="/historico"                 element={<HistoricoPage />} />
+        <Route path="*"                          element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )
