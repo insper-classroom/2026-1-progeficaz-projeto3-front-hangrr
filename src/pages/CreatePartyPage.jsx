@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, PartyPopper, Loader2 } from 'lucide-react'
 import { criarParty, adicionarMembro } from '../services/api'
+import { pegarLocalizacao } from '../utils/geo'
 
 export default function CreatePartyPage() {
   const navigate = useNavigate()
@@ -12,8 +13,14 @@ export default function CreatePartyPage() {
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro]             = useState('')
   const enviando = useRef(false)
+  const geoRef   = useRef(null)
 
   const cidade = usuario.cidade || ''
+
+  // Pede localização em background enquanto o usuário digita o nome
+  useEffect(() => {
+    pegarLocalizacao().then(geo => { geoRef.current = geo })
+  }, [])
 
   async function handleCriar() {
     if (enviando.current) return
@@ -31,7 +38,15 @@ export default function CreatePartyPage() {
         cidade,
         codigo_convite: codigo,
       })
-      await adicionarMembro({ party_id: party._id, usuario_id: usuario._id, papel: 'host' })
+      const geo = geoRef.current
+      await adicionarMembro({
+        party_id:   party._id,
+        usuario_id: usuario._id,
+        papel:      'host',
+        lat:        geo?.lat      ?? null,
+        lng:        geo?.lng      ?? null,
+        accuracy:   geo?.accuracy ?? null,
+      })
       navigate(`/party/${party._id}`)
     } catch (err) {
       setErro(err.message || 'Erro ao criar party.')

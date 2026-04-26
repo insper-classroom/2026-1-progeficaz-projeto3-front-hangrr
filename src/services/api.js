@@ -72,11 +72,11 @@ export async function listarPartiesUsuario(usuario_id) {
 
 // ── Membros ───────────────────────────────────────────────────────────────
 
-export async function adicionarMembro({ party_id, usuario_id, papel = 'member' }) {
+export async function adicionarMembro({ party_id, usuario_id, papel = 'member', lat = null, lng = null, accuracy = null }) {
   const d = await req('/party_membros', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ party_id, usuario_id, papel }),
+    body: JSON.stringify({ party_id, usuario_id, papel, lat, lng, accuracy }),
   })
   return d.membro
 }
@@ -116,8 +116,12 @@ export async function votarParty({ party_id, usuario_id, categorias }) {
 
 // ── Explorar ──────────────────────────────────────────────────────────────
 
-export async function buscarLugares(party_id, slug) {
-  const d = await req(`/lugares?party_id=${party_id}&slug=${slug}`)
+export async function buscarLugares(party_id, slug, raio = 2000, geo = null) {
+  let url = `/lugares?party_id=${party_id}&slug=${slug}&raio=${raio}`
+  if (geo?.lat != null && geo?.lng != null) {
+    url += `&lat=${geo.lat}&lng=${geo.lng}&accuracy=${geo.accuracy ?? 9999}`
+  }
+  const d = await req(url)
   return d
 }
 

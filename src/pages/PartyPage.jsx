@@ -14,6 +14,14 @@ const CATS = [
 ]
 const CATS_MAP = Object.fromEntries(CATS.map(c => [c.slug, c]))
 
+const RAIOS = [
+  { label: '500m',  value: 500 },
+  { label: '1km',   value: 1000 },
+  { label: '2km',   value: 2000 },
+  { label: '5km',   value: 5000 },
+  { label: '10km',  value: 10000 },
+]
+
 const AVATAR_PALETTE = [
   { bg: '#CCFF00', text: '#000' },
   { bg: '#FF3D8A', text: '#fff' },
@@ -44,6 +52,7 @@ export default function PartyPage() {
   const [nickValue, setNickValue]     = useState('')
   const [savingNick, setSavingNick]   = useState(false)
   const [kickingId, setKickingId]     = useState(null)
+  const [raio, setRaio]               = useState(2000)
 
   const enviandoRef = useRef(false)
   const nickInputRef = useRef(null)
@@ -262,9 +271,25 @@ export default function PartyPage() {
                 </p>
               </motion.div>
 
+              {/* Seletor de raio */}
+              <div style={s.raioWrap}>
+                <p style={s.raioLabel}><MapPin size={11} /> Distância de mim</p>
+                <div style={s.raioRow}>
+                  {RAIOS.map(r => (
+                    <button
+                      key={r.value}
+                      style={{ ...s.raioPill, ...(raio === r.value ? s.raioPillOn : {}) }}
+                      onClick={() => setRaio(r.value)}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <motion.button
                 style={s.explorarBtn}
-                onClick={() => navigate(`/party/${id}/explorar/${match.match}`)}
+                onClick={() => navigate(`/party/${id}/explorar/${match.match}?raio=${raio}`)}
                 whileTap={{ scale: 0.97 }}
               >
                 <MapPin size={15} />
@@ -467,6 +492,11 @@ const s = {
   rankBar:      { height: '100%', borderRadius: 'var(--r-full)', transition: 'width .4s ease' },
   rankVotos:    { fontSize: 12, fontWeight: 700, color: 'var(--text-3)', width: 20, textAlign: 'right', flexShrink: 0 },
 
+  raioWrap:   { display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 14px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-xl)', marginBottom: 10 },
+  raioLabel:  { display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-3)' },
+  raioRow:    { display: 'flex', gap: 6 },
+  raioPill:   { padding: '6px 12px', fontSize: 12, fontWeight: 700, borderRadius: 'var(--r-full)', border: '1px solid var(--line)', background: 'var(--bg-2)', color: 'var(--text-2)', cursor: 'pointer' },
+  raioPillOn: { background: 'var(--lime)', borderColor: 'var(--lime)', color: '#000' },
   explorarBtn: { width: '100%', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', color: 'var(--text-1)', fontWeight: 700, fontSize: 15, borderRadius: 'var(--r-full)', cursor: 'pointer', marginBottom: 16 },
   revoteBtn: { fontSize: 13, fontWeight: 700, color: 'var(--text-3)', background: 'none', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', padding: '8px 18px', cursor: 'pointer' },
 
