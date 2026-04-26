@@ -110,6 +110,35 @@ export async function encerrarParty(codigo, host_id) {
   return req(`/parties/${codigo}/encerrar?host_id=${host_id}`, { method: 'PATCH' })
 }
 
+// ── Social ────────────────────────────────────────────────────────────────
+
+export async function seguirUsuario(seguidor_id, seguido_id) {
+  return req('/seguir', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ seguidor_id, seguido_id }),
+  })
+}
+
+export async function deixarDeSeguir(seguidor_id, seguido_id) {
+  return req(`/seguir?seguidor_id=${seguidor_id}&seguido_id=${seguido_id}`, { method: 'DELETE' })
+}
+
+export async function listarSeguindo(usuario_id) {
+  const d = await req(`/seguindo?usuario_id=${usuario_id}`)
+  return d.seguindo
+}
+
+export async function getFeed(usuario_id) {
+  const d = await req(`/feed?usuario_id=${usuario_id}`)
+  return d.feed
+}
+
+export async function buscarUsuarios(q, usuario_id) {
+  const d = await req(`/usuarios/buscar?q=${encodeURIComponent(q)}&usuario_id=${usuario_id}`)
+  return d.usuarios
+}
+
 // ── Explorar ──────────────────────────────────────────────────────────────
 
 export async function buscarLugares(codigo, slug, raio = 2000, geo = null) {

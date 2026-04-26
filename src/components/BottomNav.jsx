@@ -3,7 +3,7 @@ import { Home, History, User } from 'lucide-react'
 
 const ITEMS = [
   { label: 'Início',    Icon: Home,    path: '/home' },
-  { label: 'Histórico', Icon: History, path: '/historico' },
+  { label: 'Feed',      Icon: History, path: '/historico' },
   { label: 'Perfil',    Icon: User,    path: '/profile' },
 ]
 
