@@ -1,31 +1,44 @@
 /**
  * Pede a geolocalização do usuário.
+ * Usa watchPosition para coletar amostras progressivas e retornar
+ * a mais precisa dentro do timeout — essencial em desktops com WiFi.
  * Retorna { lat, lng, accuracy } ou null se negado/indisponível/timeout.
- * accuracy em metros — valores típicos:
- *   GPS mobile: 5–50m
- *   WiFi:       30–300m
- *   IP (desktop sem GPS): 1000–50000m  ← descartado no backend
  */
-export function pegarLocalizacao(timeoutMs = 8000) {
+export function pegarLocalizacao(timeoutMs = 12000) {
   return new Promise((resolve) => {
     if (!navigator.geolocation) { resolve(null); return }
 
-    const timer = setTimeout(() => resolve(null), timeoutMs)
+    let best    = null
+    let watchId = null
 
-    navigator.geolocation.getCurrentPosition(
+    function finish() {
+      navigator.geolocation.clearWatch(watchId)
+      resolve(best)
+    }
+
+    const timer = setTimeout(finish, timeoutMs)
+
+    watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        clearTimeout(timer)
-        resolve({
+        const current = {
           lat:      pos.coords.latitude,
           lng:      pos.coords.longitude,
           accuracy: pos.coords.accuracy,
-        })
+        }
+        if (!best || current.accuracy < best.accuracy) {
+          best = current
+        }
+        // Fix muito bom obtido — não precisa esperar mais
+        if (current.accuracy <= 50) {
+          clearTimeout(timer)
+          finish()
+        }
       },
       () => {
         clearTimeout(timer)
-        resolve(null)
+        finish()
       },
-      { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 },
     )
   })
 }
