@@ -1,9 +1,21 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Pencil, Check, X, LogOut, Bell, BellOff, UserPlus, Clock, ChevronRight } from 'lucide-react'
+import { Pencil, Check, X, LogOut, Bell, UserPlus, Clock, ChevronRight, Camera } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 import LocationPicker from '../components/LocationPicker'
+
+import p1 from '../assets/profiles/black_male_face.png'
+import p2 from '../assets/profiles/asian_woman_face.png'
+import p3 from '../assets/profiles/black_woman_face.png'
+import p4 from '../assets/profiles/bald_male_face.png'
+
+const PROFILES = [
+  { id: 'black_male',   src: p1 },
+  { id: 'asian_woman',  src: p2 },
+  { id: 'black_woman',  src: p3 },
+  { id: 'bald_male',    src: p4 },
+]
 
 /* ─── Category data (mirrors onboarding) ─────────────────────────────── */
 const CATS = [
@@ -34,6 +46,9 @@ export default function ProfilePage() {
   /* edit gostos */
   const [editGostos, setEditGostos]     = useState(false)
   const [selCats, setSelCats]           = useState(new Set())
+
+  /* photo picker */
+  const [pickingPhoto, setPickingPhoto] = useState(false)
 
   /* notifications */
   const [notifs, setNotifs] = useState({ party: true, match: true, amigos: false, novidades: false })
@@ -75,6 +90,16 @@ export default function ProfilePage() {
     setCidadeEdit(usuario.cidade)
     setEditMode(false)
     setEditCidade(false)
+  }
+
+  function escolherFoto(photoId) {
+    const updated = { ...usuario }
+    if (photoId) updated.photo = photoId
+    else delete updated.photo
+    localStorage.setItem('hangr_user', JSON.stringify(updated))
+    setUsuario(updated)
+    setPickingPhoto(false)
+    showToast('Foto atualizada!')
   }
 
   function salvarGostos() {
@@ -130,9 +155,59 @@ export default function ProfilePage() {
         )}
       </nav>
 
+      {/* backdrop to close picker */}
+      {pickingPhoto && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setPickingPhoto(false)} />
+      )}
+
       {/* ── Avatar + info ── */}
       <div style={s.heroSection}>
-        <div style={s.avatar}>{iniciais}</div>
+
+        {/* avatar with photo picker */}
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <motion.button style={s.avatarBtn} onClick={() => setPickingPhoto(p => !p)} whileTap={{ scale: 0.94 }}>
+            {usuario.photo ? (
+              <img src={PROFILES.find(p => p.id === usuario.photo)?.src} style={s.avatarImg} alt="perfil" />
+            ) : (
+              <div style={s.avatar}>{iniciais}</div>
+            )}
+            <div style={s.cameraBadge}><Camera size={11} /></div>
+          </motion.button>
+
+          <AnimatePresence>
+            {pickingPhoto && (
+              <motion.div
+                style={s.photoPicker}
+                initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                transition={{ duration: 0.16 }}
+              >
+                <p style={s.pickerLabel}>Escolha uma foto</p>
+                <div style={s.photoGrid}>
+                  {/* default: initials */}
+                  <motion.button
+                    style={{ ...s.photoOption, borderColor: !usuario.photo ? 'var(--lime)' : 'var(--line)' }}
+                    onClick={() => escolherFoto(null)}
+                    whileTap={{ scale: 0.93 }}
+                  >
+                    <div style={{ ...s.avatar, width: 50, height: 50, fontSize: 16 }}>{iniciais}</div>
+                  </motion.button>
+                  {PROFILES.map(p => (
+                    <motion.button
+                      key={p.id}
+                      style={{ ...s.photoOption, borderColor: usuario.photo === p.id ? 'var(--lime)' : 'var(--line)' }}
+                      onClick={() => escolherFoto(p.id)}
+                      whileTap={{ scale: 0.93 }}
+                    >
+                      <img src={p.src} style={s.photoThumb} alt={p.id} />
+                    </motion.button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {editMode ? (
           <div style={s.editFields}>
@@ -463,5 +538,51 @@ const s = {
     padding: '10px 20px', background: 'var(--lime)', color: '#000',
     fontWeight: 700, fontSize: 13, borderRadius: 'var(--r-full)',
     boxShadow: '0 8px 24px rgba(0,0,0,0.4)', zIndex: 100, whiteSpace: 'nowrap',
+  },
+
+  /* Avatar button */
+  avatarBtn: {
+    position: 'relative', display: 'block',
+    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+    borderRadius: '50%',
+  },
+  avatarImg: {
+    width: 80, height: 80, borderRadius: '50%',
+    objectFit: 'cover', display: 'block',
+    border: '3px solid var(--lime)',
+  },
+  cameraBadge: {
+    position: 'absolute', bottom: 2, right: 2,
+    width: 22, height: 22, borderRadius: '50%',
+    background: 'var(--bg-2)', border: '1px solid var(--line)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: 'var(--text-2)',
+  },
+
+  /* Photo picker */
+  photoPicker: {
+    position: 'absolute', top: 'calc(100% + 10px)', left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'var(--bg-2)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-2xl)', padding: '14px 16px',
+    zIndex: 100, boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+    minWidth: 280,
+  },
+  pickerLabel: {
+    fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+    textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 12,
+    textAlign: 'center',
+  },
+  photoGrid: {
+    display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap',
+  },
+  photoOption: {
+    padding: 3, background: 'none', borderRadius: '50%',
+    border: '2px solid', cursor: 'pointer',
+    transition: 'border-color .15s',
+  },
+  photoThumb: {
+    width: 50, height: 50, borderRadius: '50%',
+    objectFit: 'cover', display: 'block',
   },
 }
