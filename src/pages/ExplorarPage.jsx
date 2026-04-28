@@ -411,7 +411,7 @@ export default function ExplorarPage() {
             ))}
             {lugares.filter(l => l.lat != null).map(l => (
               <Marker key={l.id} position={[l.lat, l.lng]} icon={makeIcon(
-                `<div style="width:8px;height:8px;background:#fff;border-radius:50%;opacity:0.7"></div>`, 8
+                `<div style="width:20px;height:20px;background:#111;border:1px solid #333;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px">${cat.emoji}</div>`, 20
               )} />
             ))}
           </MapContainer>
