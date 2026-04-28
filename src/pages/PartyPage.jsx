@@ -58,6 +58,8 @@ export default function PartyPage() {
   const [selCats, setSelCats]   = useState(new Set())
   const [copiado, setCopiado]   = useState(false)
   const [enviando, setEnviando] = useState(false)
+  const [hanging, setHanging]   = useState(false)
+  const [revealEmoji, setRevealEmoji] = useState('🎲')
   const [erro, setErro]         = useState('')
 
   // ── Sidebar / nick / kick ───────────────────────────────────────────────
@@ -118,6 +120,18 @@ export default function PartyPage() {
   useEffect(() => {
     if (editingNick && nickInputRef.current) nickInputRef.current.focus()
   }, [editingNick])
+
+  // ── Emoji cycling during revealing ──────────────────────────────────────
+  useEffect(() => {
+    if (view !== 'revealing') return
+    const emojis = CATS.map(c => c.emoji)
+    let i = 0
+    const t = setInterval(() => {
+      i++
+      setRevealEmoji(emojis[i % emojis.length])
+    }, 950)
+    return () => clearInterval(t)
+  }, [view])
 
   // ── Revealing → result with confetti ────────────────────────────────────
   useEffect(() => {
@@ -193,14 +207,7 @@ export default function PartyPage() {
       setReacoes(saved)
 
       const jaVotou = (partyData.votes || []).some(v => v.usuario_id === usuario._id)
-      if (jaVotou) {
-        const m = await calcularMatch(codigo)
-        setMatch(m)
-        salvarNoHistorico(partyData, partyData.membros || [], m)
-        setView('result') // skip reveal on page reload
-      } else {
-        setView('voting')
-      }
+      setView(jaVotou ? 'voted' : 'voting')
     } catch {
       setView('voting')
     }
@@ -217,18 +224,28 @@ export default function PartyPage() {
         usuario_id: usuario._id,
         categorias: [...selCats].map(slug => ({ slug, tipo: 'like', forca: 1 })),
       })
-      const m = await calcularMatch(codigo)
-      setMatch(m)
       setParty(prev => ({
         ...prev,
         votes: [...(prev?.votes || []), { usuario_id: usuario._id, categorias: [...selCats].map(s => ({ slug: s })) }],
       }))
-      salvarNoHistorico(party, membros, m)
-      setView('revealing') // dramatic reveal!
+      setView('voted')
     } catch (err) {
       setErro(err.message || 'Erro ao votar.')
       setEnviando(false)
       enviandoRef.current = false
+    }
+  }
+
+  async function hang() {
+    if (hanging) return
+    setHanging(true)
+    try {
+      const m = await calcularMatch(codigo)
+      setMatch(m)
+      salvarNoHistorico(party, membros, m)
+      setView('revealing')
+    } catch {
+      setHanging(false)
     }
   }
 
@@ -523,8 +540,55 @@ export default function PartyPage() {
               >
                 {enviando
                   ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Enviando...</>
-                  : <>Ver resultado</>}
+                  : <>Confirmar voto</>}
               </motion.button>
+            </motion.div>
+          )}
+
+          {/* ── Voted (waiting for HANG) ── */}
+          {view === 'voted' && (
+            <motion.div key="voted" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }} style={{ textAlign: 'center' }}>
+              <p style={s.sectionEye}>✅ Voto confirmado</p>
+              <h2 style={{ ...s.sectionTitle, textAlign: 'center' }}>Aguardando o grupo</h2>
+              <p style={{ ...s.sectionSub, textAlign: 'center' }}>
+                {membros.filter(m => votouIds.has(m.usuario_id)).length} de {membros.length} votaram
+              </p>
+
+              <div style={s.memberVoteList}>
+                {membros.map((m, i) => {
+                  const palette = AVATAR_PALETTE[i % AVATAR_PALETTE.length]
+                  const votou = votouIds.has(m.usuario_id)
+                  return (
+                    <div key={m.usuario_id} style={s.memberVoteRow}>
+                      <div style={{ ...s.memberVoteAvatar, background: palette.bg, color: palette.text }}>
+                        {(m.nickname || m.nome?.split(' ')[0] || '?')[0].toUpperCase()}
+                      </div>
+                      <span style={s.memberVoteName}>{m.nickname || m.nome?.split(' ')[0] || 'User'}</span>
+                      <span style={{ fontSize: 16 }}>{votou ? '✅' : '⏳'}</span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {souHost && (
+                <motion.button
+                  style={{ ...s.hangBtn, opacity: hanging ? 0.6 : 1 }}
+                  onClick={hang}
+                  disabled={hanging}
+                  whileTap={{ scale: 0.96 }}
+                  animate={hanging ? {} : { scale: [1, 1.03, 1] }}
+                  transition={hanging ? {} : { repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+                >
+                  {hanging
+                    ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Calculando...</>
+                    : <>HANG 🤙</>}
+                </motion.button>
+              )}
+              {!souHost && (
+                <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 32 }}>
+                  Aguarde o host iniciar o match.
+                </p>
+              )}
             </motion.div>
           )}
 
@@ -533,13 +597,18 @@ export default function PartyPage() {
             <motion.div key="revealing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ textAlign: 'center', padding: '40px 0' }}>
               <p style={s.sectionEye}>✳ Match</p>
               <h2 style={{ ...s.sectionTitle, textAlign: 'center' }}>e o rolê é...</h2>
-              <motion.div
-                style={{ fontSize: 80, margin: '32px 0' }}
-                animate={{ scale: [1, 1.18, 1], rotate: [0, 8, -8, 0] }}
-                transition={{ repeat: Infinity, duration: 0.9 }}
-              >
-                {match?.match ? CATS_MAP[match.match]?.emoji : '🎲'}
-              </motion.div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={revealEmoji}
+                  style={{ fontSize: 80, margin: '32px 0' }}
+                  initial={{ scale: 0.6, opacity: 0, rotate: -15 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                  exit={{ scale: 1.3, opacity: 0, rotate: 15 }}
+                  transition={{ duration: 0.22, ease: 'easeOut' }}
+                >
+                  {revealEmoji}
+                </motion.div>
+              </AnimatePresence>
               <p style={{ color: 'var(--text-3)', fontSize: 13, fontWeight: 600 }}>Contando os votos...</p>
             </motion.div>
           )}
@@ -851,6 +920,18 @@ const s = {
   catNome:  { fontSize: 13, fontWeight: 700, flex: 1 },
   error:    { fontSize: 13, color: '#FCA5A5', padding: '10px 14px', background: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.2)', borderRadius: 'var(--r-md)', marginBottom: 12 },
   submitBtn: { width: '100%', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--lime)', color: '#000', fontWeight: 700, fontSize: 15, borderRadius: 'var(--r-full)', border: 'none', cursor: 'pointer' },
+
+  /* Voted / HANG view */
+  memberVoteList:   { display: 'flex', flexDirection: 'column', gap: 6, margin: '24px 0 32px', textAlign: 'left' },
+  memberVoteRow:    { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-xl)' },
+  memberVoteAvatar: { width: 36, height: 36, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800 },
+  memberVoteName:   { flex: 1, fontSize: 14, fontWeight: 700 },
+  hangBtn: {
+    width: '100%', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    gap: 10, background: 'var(--lime)', color: '#000', fontWeight: 900, fontSize: 22,
+    letterSpacing: '-0.03em', borderRadius: 'var(--r-2xl)', border: 'none', cursor: 'pointer',
+    boxShadow: '0 0 40px rgba(204,255,0,0.35)',
+  },
 
   winnerCard:  { padding: '36px 24px', borderRadius: 'var(--r-2xl)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 16 },
   winnerEmoji: { fontSize: 56, lineHeight: 1, marginBottom: 4 },

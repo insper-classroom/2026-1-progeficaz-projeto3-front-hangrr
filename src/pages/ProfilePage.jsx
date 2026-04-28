@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Pencil, Check, X, LogOut, Bell, UserPlus, Clock, ChevronRight, Camera } from 'lucide-react'
+import { Pencil, Check, X, LogOut, Bell, UserPlus, ChevronRight, Camera, Search, Loader2 } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 import LocationPicker from '../components/LocationPicker'
+import { buscarUsuarios, seguirUsuario } from '../services/api'
 
 import p1 from '../assets/profiles/black_male_face.png'
 import p2 from '../assets/profiles/asian_woman_face.png'
@@ -27,7 +28,7 @@ const CATS = [
   { slug: 'esportes',     nome: 'Esportes',     emoji: '⚽', cor: '#FF5C3A', corTexto: '#fff' },
 ]
 
-const TABS = ['Perfil', 'Amigos', 'Histórico']
+const TABS = ['Perfil', 'Amigos']
 
 function calcularStreak(historico) {
   if (!historico.length) return 0
@@ -70,6 +71,14 @@ export default function ProfilePage() {
 
   /* photo picker */
   const [pickingPhoto, setPickingPhoto] = useState(false)
+
+  /* add friend sheet */
+  const [showAddFriend, setShowAddFriend]   = useState(false)
+  const [searchAmigo, setSearchAmigo]       = useState('')
+  const [searchResultados, setSearchResultados] = useState([])
+  const [buscandoAmigo, setBuscandoAmigo]   = useState(false)
+  const [seguidos, setSeguidos]             = useState(new Set())
+  const [linkCopiado, setLinkCopiado]       = useState(false)
 
   /* notifications */
   const [notifs, setNotifs] = useState({ party: true, match: true, amigos: false, novidades: false })
@@ -137,6 +146,20 @@ export default function ProfilePage() {
     localStorage.setItem('hangr_notifs', JSON.stringify(updated))
   }
 
+  async function seguir(alvo_id) {
+    if (!usuario?._id) return
+    setSeguidos(prev => new Set([...prev, alvo_id]))
+    try { await seguirUsuario(usuario._id, alvo_id) } catch {}
+  }
+
+  function copiarLinkConvite() {
+    const link = 'https://www.hangr.com.br/registrar'
+    navigator.clipboard.writeText(link).then(() => {
+      setLinkCopiado(true)
+      setTimeout(() => setLinkCopiado(false), 2200)
+    })
+  }
+
   function toggleCat(slug) {
     setSelCats(prev => {
       const n = new Set(prev)
@@ -151,6 +174,20 @@ export default function ProfilePage() {
     localStorage.removeItem('hangr_notifs')
     navigate('/')
   }
+
+  // ── Friend search debounce ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!searchAmigo.trim()) { setSearchResultados([]); return }
+    const t = setTimeout(async () => {
+      setBuscandoAmigo(true)
+      try {
+        const res = await buscarUsuarios(searchAmigo, usuario?._id)
+        setSearchResultados(res || [])
+      } catch { setSearchResultados([]) }
+      finally { setBuscandoAmigo(false) }
+    }, 400)
+    return () => clearTimeout(t)
+  }, [searchAmigo])
 
   // ── Stats from historico (hooks must be before any early return) ────────
   const historico = useMemo(() => {
@@ -421,29 +458,12 @@ export default function ProfilePage() {
           {tab === 1 && (
             <motion.div key="amigos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
               <Section title="Amigos">
-                <input style={s.searchInput} placeholder="Buscar por nome ou email…" />
                 <div style={s.emptyState}>
                   <span style={s.emptyIcon}>👥</span>
                   <p style={s.emptyTitle}>Nenhum amigo ainda.</p>
                   <p style={s.emptyDesc}>Adicione amigos para criar parties juntos.</p>
-                  <button style={s.limeBtn}>
+                  <button style={s.limeBtn} onClick={() => setShowAddFriend(true)}>
                     <UserPlus size={14} /> Adicionar amigo
-                  </button>
-                </div>
-              </Section>
-            </motion.div>
-          )}
-
-          {/* ── Histórico tab ── */}
-          {tab === 2 && (
-            <motion.div key="historico" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-              <Section title="Parties anteriores">
-                <div style={s.emptyState}>
-                  <span style={s.emptyIcon}>✳</span>
-                  <p style={s.emptyTitle}>Histórico vazio.</p>
-                  <p style={s.emptyDesc}>Suas parties concluídas aparecerão aqui.</p>
-                  <button style={s.limeBtn} onClick={() => navigate('/party/create')}>
-                    <Clock size={14} /> Criar primeira party
                   </button>
                 </div>
               </Section>
@@ -464,6 +484,93 @@ export default function ProfilePage() {
           >
             <Check size={14} /> {toast}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Add Friend Sheet ── */}
+      <AnimatePresence>
+        {showAddFriend && (
+          <>
+            <motion.div
+              style={s.sheetBackdrop}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setShowAddFriend(false); setSearchAmigo(''); setSearchResultados([]) }}
+            />
+            <motion.div
+              style={s.sheet}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+            >
+              <div style={s.sheetHandle} />
+              <div style={s.sheetHeader}>
+                <p style={s.sheetTitle}>Adicionar amigo</p>
+                <button style={s.sheetClose} onClick={() => { setShowAddFriend(false); setSearchAmigo(''); setSearchResultados([]) }}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Search input */}
+              <div style={s.searchRow}>
+                <Search size={15} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
+                <input
+                  style={s.searchField}
+                  placeholder="Buscar por nome ou e-mail..."
+                  value={searchAmigo}
+                  onChange={e => setSearchAmigo(e.target.value)}
+                  autoFocus
+                />
+                {buscandoAmigo && <Loader2 size={15} style={{ color: 'var(--text-3)', flexShrink: 0, animation: 'spin 1s linear infinite' }} />}
+              </div>
+
+              {/* Results */}
+              {searchResultados.length > 0 && (
+                <div style={s.resultList}>
+                  {searchResultados.map(u => (
+                    <div key={u._id} style={s.resultRow}>
+                      <div style={s.resultAvatar}>
+                        {u.photo
+                          ? <img src={PROFILES.find(p => p.id === u.photo)?.src} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} alt={u.nome} />
+                          : <div style={{ ...s.avatar, width: 40, height: 40, fontSize: 14 }}>{u.nome?.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase() || '?'}</div>
+                        }
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={s.resultNome}>{u.nome}</p>
+                        <p style={s.resultEmail}>{u.email}</p>
+                      </div>
+                      {seguidos.has(u._id) ? (
+                        <span style={s.seguidoTag}><Check size={12} /> Seguindo</span>
+                      ) : (
+                        <motion.button style={s.seguirBtn} onClick={() => seguir(u._id)} whileTap={{ scale: 0.94 }}>
+                          <UserPlus size={13} /> Seguir
+                        </motion.button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {searchAmigo.trim() && !buscandoAmigo && searchResultados.length === 0 && (
+                <p style={{ fontSize: 13, color: 'var(--text-3)', textAlign: 'center', padding: '16px 0' }}>
+                  Nenhum usuário encontrado.
+                </p>
+              )}
+
+              {/* Invite section */}
+              <div style={s.inviteBox}>
+                <div style={s.inviteTextBlock}>
+                  <p style={s.inviteTitle}>Convidar amigo a criar conta</p>
+                  <p style={s.inviteDesc}>Compartilhe o link e chame seus amigos para o Hangr.</p>
+                </div>
+                <motion.button style={{ ...s.inviteBtn, background: linkCopiado ? 'var(--lime)' : 'var(--bg-3)', color: linkCopiado ? '#000' : '#fff' }} onClick={copiarLinkConvite} whileTap={{ scale: 0.95 }}>
+                  {linkCopiado ? <><Check size={12} /> Copiado</> : 'Copiar link'}
+                </motion.button>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
@@ -609,6 +716,79 @@ const s = {
     padding: '10px 20px', background: 'var(--lime)', color: '#000',
     fontWeight: 700, fontSize: 13, borderRadius: 'var(--r-full)',
     boxShadow: '0 8px 24px rgba(0,0,0,0.4)', zIndex: 100, whiteSpace: 'nowrap',
+  },
+
+  /* Add friend sheet */
+  sheetBackdrop: {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+    zIndex: 200, backdropFilter: 'blur(2px)',
+  },
+  sheet: {
+    position: 'fixed', bottom: 0, left: 0, right: 0,
+    background: 'var(--bg-1)', borderRadius: '24px 24px 0 0',
+    border: '1px solid var(--line)', borderBottom: 'none',
+    padding: '0 20px 40px', zIndex: 201,
+    maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+    overflowY: 'auto',
+  },
+  sheetHandle: {
+    width: 36, height: 4, borderRadius: 2,
+    background: 'var(--line)', margin: '12px auto 0',
+    flexShrink: 0,
+  },
+  sheetHeader: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '16px 0 12px', flexShrink: 0,
+  },
+  sheetTitle: { fontSize: 16, fontWeight: 800, letterSpacing: '-0.03em' },
+  sheetClose: {
+    width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: '50%',
+    color: 'var(--text-2)', cursor: 'pointer',
+  },
+  searchRow: {
+    display: 'flex', alignItems: 'center', gap: 10,
+    background: 'var(--bg-2)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-lg)', padding: '11px 14px',
+    marginBottom: 16, flexShrink: 0,
+  },
+  searchField: {
+    flex: 1, background: 'none', border: 'none', outline: 'none',
+    color: '#fff', fontSize: 14,
+  },
+  resultList: { display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 20 },
+  resultRow: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    padding: '10px 0', borderBottom: '1px solid var(--line)',
+  },
+  resultAvatar: { flexShrink: 0 },
+  resultNome:  { fontSize: 14, fontWeight: 700, marginBottom: 2 },
+  resultEmail: { fontSize: 12, color: 'var(--text-3)' },
+  seguirBtn: {
+    display: 'flex', alignItems: 'center', gap: 5,
+    padding: '7px 14px', background: 'var(--lime)', color: '#000',
+    fontWeight: 700, fontSize: 12, border: 'none',
+    borderRadius: 'var(--r-full)', cursor: 'pointer', flexShrink: 0,
+  },
+  seguidoTag: {
+    display: 'flex', alignItems: 'center', gap: 4,
+    fontSize: 12, fontWeight: 600, color: 'var(--text-3)',
+    padding: '7px 12px', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-full)', flexShrink: 0,
+  },
+  inviteBox: {
+    display: 'flex', alignItems: 'center', gap: 14,
+    padding: '16px', marginTop: 8,
+    background: 'var(--bg-2)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-2xl)', flexShrink: 0,
+  },
+  inviteTextBlock: { flex: 1 },
+  inviteTitle: { fontSize: 14, fontWeight: 700, marginBottom: 3 },
+  inviteDesc:  { fontSize: 12, color: 'var(--text-2)', lineHeight: 1.4 },
+  inviteBtn: {
+    padding: '9px 16px', background: 'var(--bg-3)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-full)', color: '#fff', fontWeight: 700, fontSize: 12,
+    cursor: 'pointer', flexShrink: 0,
   },
 
   /* Avatar button */
