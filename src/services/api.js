@@ -139,6 +139,21 @@ export async function buscarUsuarios(q, usuario_id) {
   return d.usuarios
 }
 
+// ── Chat ──────────────────────────────────────────────────────────────────
+
+export async function getChatMensagens(codigo) {
+  const d = await req(`/parties/${codigo}/chat`)
+  return d.mensagens
+}
+
+export async function enviarMensagemChat(codigo, { usuario_id, nome, texto }) {
+  return req(`/parties/${codigo}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ usuario_id, nome, texto }),
+  })
+}
+
 // ── Explorar ──────────────────────────────────────────────────────────────
 
 export async function buscarLugares(codigo, slug, raio = 2000, geo = null) {

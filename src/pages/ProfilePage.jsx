@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Pencil, Check, X, LogOut, Bell, UserPlus, Clock, ChevronRight, Camera } from 'lucide-react'
@@ -28,6 +28,27 @@ const CATS = [
 ]
 
 const TABS = ['Perfil', 'Amigos', 'Histórico']
+
+function calcularStreak(historico) {
+  if (!historico.length) return 0
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000
+  function weekStart(d) {
+    const m = new Date(d)
+    const day = m.getDay() || 7
+    m.setDate(m.getDate() - (day - 1))
+    m.setHours(0, 0, 0, 0)
+    return m.getTime()
+  }
+  const semanas = new Set(historico.map(p => weekStart(new Date(p.criada_em || Date.now()))))
+  let streak = 0
+  let w = weekStart(new Date())
+  while (semanas.has(w)) { streak++; w -= msPerWeek }
+  if (streak === 0) {
+    w = weekStart(new Date()) - msPerWeek
+    while (semanas.has(w)) { streak++; w -= msPerWeek }
+  }
+  return streak
+}
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -130,6 +151,18 @@ export default function ProfilePage() {
     localStorage.removeItem('hangr_notifs')
     navigate('/')
   }
+
+  // ── Stats from historico (hooks must be before any early return) ────────
+  const historico = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem('hangr_historico') || '[]') } catch { return [] }
+  }, [])
+  const streak       = useMemo(() => calcularStreak(historico), [historico])
+  const totalMatches = historico.filter(p => p.match).length
+  const favCat = useMemo(() => {
+    const freq = {}
+    historico.forEach(p => { if (p.match) freq[p.match] = (freq[p.match] || 0) + 1 })
+    return Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] || null
+  }, [historico])
 
   if (!usuario) return null
 
@@ -244,9 +277,9 @@ export default function ProfilePage() {
       {!editMode && (
         <div style={s.stats}>
           {[
-            { label: 'Parties', value: '0' },
-            { label: 'Participações', value: '0' },
-            { label: 'Matches', value: '0' },
+            { label: 'Parties',  value: String(historico.length) },
+            { label: 'Streak 🔥', value: streak > 0 ? `${streak}` : '—' },
+            { label: 'Matches',  value: String(totalMatches) },
           ].map(({ label, value }) => (
             <div key={label} style={s.statItem}>
               <span style={s.statValue}>{value}</span>
@@ -325,6 +358,33 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <p style={s.emptyText}>Nenhum gosto selecionado ainda.</p>
+                )}
+              </Section>
+
+              {/* Estatísticas */}
+              <Section title="Estatísticas">
+                {historico.length === 0 ? (
+                  <p style={s.emptyText}>Nenhuma party concluída ainda.</p>
+                ) : (
+                  <div style={s.statsCards}>
+                    {favCat && (
+                      <div style={s.statCard}>
+                        <span style={{ fontSize: 28 }}>{CATS.find(c => c.slug === favCat)?.emoji}</span>
+                        <p style={s.statCardVal}>{CATS.find(c => c.slug === favCat)?.nome}</p>
+                        <p style={s.statCardLabel}>Categoria favorita</p>
+                      </div>
+                    )}
+                    <div style={s.statCard}>
+                      <span style={{ fontSize: 28 }}>🔥</span>
+                      <p style={s.statCardVal}>{streak > 0 ? streak : '—'}</p>
+                      <p style={s.statCardLabel}>Semanas seguidas</p>
+                    </div>
+                    <div style={s.statCard}>
+                      <span style={{ fontSize: 28 }}>🎯</span>
+                      <p style={s.statCardVal}>{historico.length}</p>
+                      <p style={s.statCardLabel}>Parties encerradas</p>
+                    </div>
+                  </div>
                 )}
               </Section>
 
@@ -530,6 +590,17 @@ const s = {
   limeBtn:   { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: 'var(--lime)', color: '#000', fontWeight: 700, fontSize: 13, border: 'none', borderRadius: 'var(--r-full)', cursor: 'pointer', marginTop: 4 },
   ghostBtn:  { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: 'transparent', color: 'var(--text-2)', fontWeight: 600, fontSize: 13, border: '1px solid var(--line)', borderRadius: 'var(--r-full)', cursor: 'pointer' },
   dangerBtn: { display: 'flex', alignItems: 'center', gap: 8, padding: '12px 0', color: '#FF4545', fontWeight: 600, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer' },
+
+  /* Stats cards */
+  statsCards: { display: 'flex', gap: 10, flexWrap: 'wrap' },
+  statCard: {
+    flex: '1 1 90px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+    gap: 4, padding: '16px 12px',
+    background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-xl)',
+    textAlign: 'center',
+  },
+  statCardVal:   { fontSize: 18, fontWeight: 900, letterSpacing: '-0.03em' },
+  statCardLabel: { fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.02em' },
 
   /* Toast */
   toast: {
