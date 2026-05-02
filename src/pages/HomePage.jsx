@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Link2, Compass, User, ArrowRight } from 'lucide-react'
+import { Plus, Link2, User, ArrowRight } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 
 const enter = (delay = 0) => ({
@@ -100,13 +100,6 @@ export default function HomePage() {
               </motion.div>
             )}
           </AnimatePresence>
-          <ActionCard
-            label="Explorar lugares"
-            desc="Veja sugestões perto de você"
-            icon={<Compass size={20} />}
-            color="#00E096"
-            onClick={() => {}}
-          />
         </motion.div>
 
         {/* Parties */}
