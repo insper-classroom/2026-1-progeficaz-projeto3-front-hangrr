@@ -17,8 +17,8 @@ export default function LandingPage() {
       <nav style={s.nav}>
         <span style={s.logo}>hangr</span>
         <div style={s.navRight}>
-          <button style={s.navLink} onClick={() => navigate('/auth')}>Entrar</button>
-          <button style={s.navCta} onClick={() => navigate('/auth')}>
+          <button style={s.navLink} onClick={() => navigate('/auth?modo=login')}>Entrar</button>
+          <button style={s.navCta} onClick={() => navigate('/auth?modo=cadastro')}>
             Começar <ArrowUpRight size={14} />
           </button>
         </div>
@@ -47,7 +47,7 @@ export default function LandingPage() {
             <motion.button
               variants={enter(0.2)}
               style={s.btnWhite}
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/auth?modo=cadastro')}
               whileTap={{ scale: 0.97 }}
             >
               Criar conta grátis <ArrowRight size={16} />
@@ -152,7 +152,7 @@ export default function LandingPage() {
         >
           <p style={s.ctaEye}>Pronto pra isso?</p>
           <h2 style={s.ctaTitle}>Decide o rolê de hoje.</h2>
-          <button style={s.btnBlack} onClick={() => navigate('/auth')}>
+          <button style={s.btnBlack} onClick={() => navigate('/auth?modo=cadastro')}>
             Criar conta grátis <ArrowRight size={16} />
           </button>
         </motion.div>

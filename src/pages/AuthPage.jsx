@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, User, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { criarUsuario, loginUsuario } from '../services/api'
@@ -11,7 +11,8 @@ const fadeUp = (delay = 0) => ({
 
 export default function AuthPage() {
   const navigate   = useNavigate()
-  const [modo, setModo] = useState('login') // 'login' | 'cadastro'
+  const [searchParams] = useSearchParams()
+  const [modo, setModo] = useState(searchParams.get('modo') === 'cadastro' ? 'cadastro' : 'login')
 
   const [nome, setNome]   = useState('')
   const [email, setEmail] = useState('')
