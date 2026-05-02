@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Pencil, Check, X, LogOut, Bell, BellOff, UserPlus, Clock, ChevronRight } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 import LocationPicker from '../components/LocationPicker'
+import { listarPartiesUsuario } from '../services/api'
 
 /* ─── Category data (mirrors onboarding) ─────────────────────────────── */
 const CATS = [
@@ -41,6 +42,9 @@ export default function ProfilePage() {
   /* toast */
   const [toast, setToast] = useState(null)
 
+  /* stats */
+  const [stats, setStats] = useState({ parties: 0, criadas: 0 })
+
   /* ── Load ── */
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem('hangr_user') || 'null')
@@ -53,6 +57,12 @@ export default function ProfilePage() {
     setCidadeEdit(u.cidade || '')
     if (p?.categorias) setSelCats(new Set(p.categorias.map(c => c.slug)))
     if (n) setNotifs(n)
+    listarPartiesUsuario(u._id).then(ps => {
+      setStats({
+        parties: ps.length,
+        criadas: ps.filter(p => p.criada_por === u._id).length,
+      })
+    }).catch(() => {})
   }, [navigate])
 
   /* ── Helpers ── */
@@ -169,9 +179,9 @@ export default function ProfilePage() {
       {!editMode && (
         <div style={s.stats}>
           {[
-            { label: 'Parties', value: '0' },
-            { label: 'Participações', value: '0' },
-            { label: 'Matches', value: '0' },
+            { label: 'Total',   value: stats.parties },
+            { label: 'Criadas', value: stats.criadas },
+            { label: 'Entradas', value: stats.parties - stats.criadas },
           ].map(({ label, value }) => (
             <div key={label} style={s.statItem}>
               <span style={s.statValue}>{value}</span>

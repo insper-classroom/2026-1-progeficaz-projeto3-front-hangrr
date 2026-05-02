@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Link2, User, ArrowRight } from 'lucide-react'
+import { Plus, Link2, User, ArrowRight, ChevronRight, MapPin } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
+import { listarPartiesUsuario } from '../services/api'
 
 const enter = (delay = 0) => ({
   hidden: { opacity: 0, y: 20 },
@@ -12,13 +13,16 @@ const enter = (delay = 0) => ({
 export default function HomePage() {
   const navigate = useNavigate()
   const [usuario, setUsuario]     = useState(null)
+  const [parties, setParties]     = useState([])
   const [showJoin, setShowJoin]   = useState(false)
   const [codigo, setCodigo]       = useState('')
 
   useEffect(() => {
     const u = localStorage.getItem('hangr_user')
-    if (u) setUsuario(JSON.parse(u))
-    else navigate('/auth')
+    if (!u) { navigate('/auth'); return }
+    const parsed = JSON.parse(u)
+    setUsuario(parsed)
+    listarPartiesUsuario(parsed._id).then(setParties).catch(() => {})
   }, [navigate])
 
   const primeiroNome = usuario?.nome?.split(' ')[0] || 'aí'
@@ -110,7 +114,14 @@ export default function HomePage() {
           transition={{ duration: 0.4, delay: 0.3 }}
         >
           <p style={s.sectionLabel}>Suas parties</p>
-          <EmptyParties onCriar={() => navigate('/party/criar')} />
+          {parties.length === 0
+            ? <EmptyParties onCriar={() => navigate('/party/criar')} />
+            : <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {parties.map(p => (
+                  <PartyCardHome key={p._id} party={p} onClick={() => navigate(`/party/${p._id}`)} />
+                ))}
+              </div>
+          }
         </motion.div>
 
       </div>
@@ -153,6 +164,24 @@ function EmptyParties({ onCriar }) {
         <Plus size={14} /> Criar party
       </button>
     </div>
+  )
+}
+
+function PartyCardHome({ party, onClick }) {
+  const date = party.criada_em
+    ? new Date(party.criada_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    : ''
+  return (
+    <button style={s.partyCard} onClick={onClick}>
+      <div style={s.partyDot} />
+      <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+        <p style={s.partyNome}>{party.titulo}</p>
+        <p style={s.partyMeta}>
+          {party.cidade && <><MapPin size={10} /> {party.cidade} · </>}{date}
+        </p>
+      </div>
+      <ChevronRight size={15} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
+    </button>
   )
 }
 
@@ -228,6 +257,11 @@ const s = {
   joinRow:   { display: 'flex', gap: 8, padding: '4px 0 8px' },
   joinInput: { flex: 1, padding: '12px 14px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-lg)', color: '#fff', fontSize: 14, outline: 'none' },
   joinBtn:   { width: 44, height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--lime)', color: '#000', border: 'none', borderRadius: 'var(--r-lg)', cursor: 'pointer' },
+
+  partyCard: { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-xl)', cursor: 'pointer', width: '100%', transition: 'border-color .15s' },
+  partyDot:  { width: 8, height: 8, borderRadius: '50%', background: 'var(--lime)', flexShrink: 0 },
+  partyNome: { fontSize: 14, fontWeight: 700, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  partyMeta: { fontSize: 11, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 4 },
 
   emptyBtn: {
     display: 'flex', alignItems: 'center', gap: 6,

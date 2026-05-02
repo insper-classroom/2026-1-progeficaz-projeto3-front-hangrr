@@ -3,21 +3,41 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Users, MapPin, CalendarDays, ChevronRight } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
+import { listarPartiesUsuario, calcularMatch } from '../services/api'
 
 const enter = (delay = 0) => ({
   hidden: { opacity: 0, y: 16 },
   show:   { opacity: 1, y: 0, transition: { duration: 0.4, delay, ease: [0.22, 1, 0.36, 1] } },
 })
 
+const CATS_NOME = {
+  restaurantes: 'Restaurantes', bares: 'Bares', cafes: 'Cafés',
+  jogos: 'Jogos', parque: 'Parque', esportes: 'Esportes',
+}
+
 export default function HistoricoPage() {
   const navigate  = useNavigate()
   const [parties, setParties] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const u = localStorage.getItem('hangr_user')
     if (!u) { navigate('/auth'); return }
-    const saved = localStorage.getItem('hangr_historico')
-    if (saved) setParties(JSON.parse(saved))
+    const { _id } = JSON.parse(u)
+    listarPartiesUsuario(_id)
+      .then(async ps => {
+        const comMatch = await Promise.all(ps.map(async p => {
+          try {
+            const m = await calcularMatch(p._id)
+            return { ...p, matchSlug: m.match, totalMembros: m.total_membros }
+          } catch {
+            return p
+          }
+        }))
+        setParties(comMatch)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [navigate])
 
   return (
@@ -38,7 +58,7 @@ export default function HistoricoPage() {
           <motion.h1 variants={enter(0.05)} style={s.title}>Histórico</motion.h1>
         </motion.div>
 
-        {parties.length === 0 ? (
+        {loading ? null : parties.length === 0 ? (
           <motion.div
             style={s.empty}
             initial={{ opacity: 0, y: 20 }}
@@ -86,13 +106,13 @@ function PartyCard({ party }) {
         <div style={s.cardMeta}>
           <MetaItem icon={<MapPin size={12} />} text={party.cidade} />
           <MetaItem icon={<CalendarDays size={12} />} text={date} />
-          {party.membros != null && (
-            <MetaItem icon={<Users size={12} />} text={`${party.membros} participante${party.membros !== 1 ? 's' : ''}`} />
+          {party.totalMembros != null && (
+            <MetaItem icon={<Users size={12} />} text={`${party.totalMembros} participante${party.totalMembros !== 1 ? 's' : ''}`} />
           )}
         </div>
-        {party.match && (
+        {party.matchSlug && (
           <div style={s.matchBadge}>
-            ✳ Match: <strong style={{ marginLeft: 4 }}>{party.match}</strong>
+            ✳ Match: <strong style={{ marginLeft: 4 }}>{CATS_NOME[party.matchSlug] ?? party.matchSlug}</strong>
           </div>
         )}
       </div>
