@@ -295,33 +295,25 @@ export default function ProfilePage() {
           {/* ── Amigos tab ── */}
           {tab === 1 && (
             <motion.div key="amigos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-              <Section title="Amigos">
-                <input style={s.searchInput} placeholder="Buscar por nome ou email…" />
-                <div style={s.emptyState}>
-                  <span style={s.emptyIcon}>👥</span>
-                  <p style={s.emptyTitle}>Nenhum amigo ainda.</p>
-                  <p style={s.emptyDesc}>Adicione amigos para criar parties juntos.</p>
-                  <button style={s.limeBtn}>
-                    <UserPlus size={14} /> Adicionar amigo
-                  </button>
-                </div>
-              </Section>
+              <div style={s.emptyState}>
+                <span style={s.emptyIcon}>👥</span>
+                <p style={s.emptyTitle}>Em breve.</p>
+                <p style={s.emptyDesc}>A funcionalidade de amigos está sendo desenvolvida.</p>
+              </div>
             </motion.div>
           )}
 
           {/* ── Histórico tab ── */}
           {tab === 2 && (
             <motion.div key="historico" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-              <Section title="Parties anteriores">
-                <div style={s.emptyState}>
-                  <span style={s.emptyIcon}>✳</span>
-                  <p style={s.emptyTitle}>Histórico vazio.</p>
-                  <p style={s.emptyDesc}>Suas parties concluídas aparecerão aqui.</p>
-                  <button style={s.limeBtn} onClick={() => navigate('/party/create')}>
-                    <Clock size={14} /> Criar primeira party
-                  </button>
-                </div>
-              </Section>
+              <div style={s.emptyState}>
+                <span style={s.emptyIcon}>✳</span>
+                <p style={s.emptyTitle}>Ver histórico completo.</p>
+                <p style={s.emptyDesc}>Todas as suas parties estão na aba Histórico.</p>
+                <button style={s.limeBtn} onClick={() => navigate('/historico')}>
+                  <Clock size={14} /> Ver histórico
+                </button>
+              </div>
             </motion.div>
           )}
 

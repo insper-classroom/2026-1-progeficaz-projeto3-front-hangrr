@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import LocationPicker from '../components/LocationPicker'
-import { atualizarUsuario } from '../services/api'
+import { atualizarUsuario, salvarPreferencias } from '../services/api'
 
 /* ─── Data ───────────────────────────────────────────────────────────── */
 const GENEROS = [
@@ -81,21 +81,32 @@ export default function OnboardingPage() {
     if (totalSel < MIN) return
     const usuario = JSON.parse(localStorage.getItem('hangr_user') || '{}')
 
+    const categorias = [...selCats].map(slug => ({
+      slug, forca: 1, subs: [...(selSubs[slug] || [])],
+    }))
+
+    // salva cidade, gênero e data de nascimento no backend
     try {
-      const atualizado = await atualizarUsuario(usuario._id, { cidade })
+      const atualizado = await atualizarUsuario(usuario._id, {
+        cidade,
+        genero,
+        data_nascimento: dob,
+      })
       localStorage.setItem('hangr_user', JSON.stringify(atualizado))
     } catch {
-      // salva só localmente se a request falhar
-      localStorage.setItem('hangr_user', JSON.stringify({ ...usuario, cidade }))
+      localStorage.setItem('hangr_user', JSON.stringify({ ...usuario, cidade, genero, data_nascimento: dob }))
     }
+
+    // salva preferências no backend
+    try {
+      await salvarPreferencias({ usuario_id: usuario._id, categorias })
+    } catch { /* não bloqueia o fluxo */ }
 
     localStorage.setItem('hangr_prefs', JSON.stringify({
       usuario_id: usuario._id,
       genero,
       data_nascimento: dob,
-      categorias: [...selCats].map(slug => ({
-        slug, forca: 1, subs: [...(selSubs[slug] || [])],
-      })),
+      categorias,
     }))
     navigate('/home')
   }
