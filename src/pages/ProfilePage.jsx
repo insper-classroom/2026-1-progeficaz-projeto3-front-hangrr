@@ -1,10 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Pencil, Check, X, LogOut, Bell, BellOff, UserPlus, Clock, ChevronRight } from 'lucide-react'
+import { Pencil, Check, X, LogOut, Bell, UserPlus, ChevronRight, Camera, Search, Loader2 } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 import LocationPicker from '../components/LocationPicker'
-import { listarPartiesUsuario } from '../services/api'
+import { buscarUsuarios, seguirUsuario } from '../services/api'
+
+import p1 from '../assets/profiles/black_male_face.png'
+import p2 from '../assets/profiles/asian_woman_face.png'
+import p3 from '../assets/profiles/black_woman_face.png'
+import p4 from '../assets/profiles/bald_male_face.png'
+
+const PROFILES = [
+  { id: 'black_male',   src: p1 },
+  { id: 'asian_woman',  src: p2 },
+  { id: 'black_woman',  src: p3 },
+  { id: 'bald_male',    src: p4 },
+]
 
 /* ─── Category data (mirrors onboarding) ─────────────────────────────── */
 const CATS = [
@@ -16,7 +28,28 @@ const CATS = [
   { slug: 'esportes',     nome: 'Esportes',     emoji: '⚽', cor: '#FF5C3A', corTexto: '#fff' },
 ]
 
-const TABS = ['Perfil', 'Amigos', 'Histórico']
+const TABS = ['Perfil', 'Amigos']
+
+function calcularStreak(historico) {
+  if (!historico.length) return 0
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000
+  function weekStart(d) {
+    const m = new Date(d)
+    const day = m.getDay() || 7
+    m.setDate(m.getDate() - (day - 1))
+    m.setHours(0, 0, 0, 0)
+    return m.getTime()
+  }
+  const semanas = new Set(historico.map(p => weekStart(new Date(p.criada_em || Date.now()))))
+  let streak = 0
+  let w = weekStart(new Date())
+  while (semanas.has(w)) { streak++; w -= msPerWeek }
+  if (streak === 0) {
+    w = weekStart(new Date()) - msPerWeek
+    while (semanas.has(w)) { streak++; w -= msPerWeek }
+  }
+  return streak
+}
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -36,14 +69,22 @@ export default function ProfilePage() {
   const [editGostos, setEditGostos]     = useState(false)
   const [selCats, setSelCats]           = useState(new Set())
 
+  /* photo picker */
+  const [pickingPhoto, setPickingPhoto] = useState(false)
+
+  /* add friend sheet */
+  const [showAddFriend, setShowAddFriend]   = useState(false)
+  const [searchAmigo, setSearchAmigo]       = useState('')
+  const [searchResultados, setSearchResultados] = useState([])
+  const [buscandoAmigo, setBuscandoAmigo]   = useState(false)
+  const [seguidos, setSeguidos]             = useState(new Set())
+  const [linkCopiado, setLinkCopiado]       = useState(false)
+
   /* notifications */
   const [notifs, setNotifs] = useState({ party: true, match: true, amigos: false, novidades: false })
 
   /* toast */
   const [toast, setToast] = useState(null)
-
-  /* stats */
-  const [stats, setStats] = useState({ parties: 0, criadas: 0 })
 
   /* ── Load ── */
   useEffect(() => {
@@ -57,12 +98,6 @@ export default function ProfilePage() {
     setCidadeEdit(u.cidade || '')
     if (p?.categorias) setSelCats(new Set(p.categorias.map(c => c.slug)))
     if (n) setNotifs(n)
-    listarPartiesUsuario(u._id).then(ps => {
-      setStats({
-        parties: ps.length,
-        criadas: ps.filter(p => p.criada_por === u._id).length,
-      })
-    }).catch(() => {})
   }, [navigate])
 
   /* ── Helpers ── */
@@ -87,6 +122,16 @@ export default function ProfilePage() {
     setEditCidade(false)
   }
 
+  function escolherFoto(photoId) {
+    const updated = { ...usuario }
+    if (photoId) updated.photo = photoId
+    else delete updated.photo
+    localStorage.setItem('hangr_user', JSON.stringify(updated))
+    setUsuario(updated)
+    setPickingPhoto(false)
+    showToast('Foto atualizada!')
+  }
+
   function salvarGostos() {
     const updated = { ...prefs, categorias: [...selCats].map(slug => ({ slug, forca: 1, subs: [] })) }
     localStorage.setItem('hangr_prefs', JSON.stringify(updated))
@@ -99,6 +144,20 @@ export default function ProfilePage() {
     const updated = { ...notifs, [key]: !notifs[key] }
     setNotifs(updated)
     localStorage.setItem('hangr_notifs', JSON.stringify(updated))
+  }
+
+  async function seguir(alvo_id) {
+    if (!usuario?._id) return
+    setSeguidos(prev => new Set([...prev, alvo_id]))
+    try { await seguirUsuario(usuario._id, alvo_id) } catch {}
+  }
+
+  function copiarLinkConvite() {
+    const link = 'https://www.hangr.com.br/registrar'
+    navigator.clipboard.writeText(link).then(() => {
+      setLinkCopiado(true)
+      setTimeout(() => setLinkCopiado(false), 2200)
+    })
   }
 
   function toggleCat(slug) {
@@ -115,6 +174,32 @@ export default function ProfilePage() {
     localStorage.removeItem('hangr_notifs')
     navigate('/')
   }
+
+  // ── Friend search debounce ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!searchAmigo.trim()) { setSearchResultados([]); return }
+    const t = setTimeout(async () => {
+      setBuscandoAmigo(true)
+      try {
+        const res = await buscarUsuarios(searchAmigo, usuario?._id)
+        setSearchResultados(res || [])
+      } catch { setSearchResultados([]) }
+      finally { setBuscandoAmigo(false) }
+    }, 400)
+    return () => clearTimeout(t)
+  }, [searchAmigo])
+
+  // ── Stats from historico (hooks must be before any early return) ────────
+  const historico = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem('hangr_historico') || '[]') } catch { return [] }
+  }, [])
+  const streak       = useMemo(() => calcularStreak(historico), [historico])
+  const totalMatches = historico.filter(p => p.match).length
+  const favCat = useMemo(() => {
+    const freq = {}
+    historico.forEach(p => { if (p.match) freq[p.match] = (freq[p.match] || 0) + 1 })
+    return Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] || null
+  }, [historico])
 
   if (!usuario) return null
 
@@ -140,9 +225,59 @@ export default function ProfilePage() {
         )}
       </nav>
 
+      {/* backdrop to close picker */}
+      {pickingPhoto && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setPickingPhoto(false)} />
+      )}
+
       {/* ── Avatar + info ── */}
       <div style={s.heroSection}>
-        <div style={s.avatar}>{iniciais}</div>
+
+        {/* avatar with photo picker */}
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <motion.button style={s.avatarBtn} onClick={() => setPickingPhoto(p => !p)} whileTap={{ scale: 0.94 }}>
+            {usuario.photo ? (
+              <img src={PROFILES.find(p => p.id === usuario.photo)?.src} style={s.avatarImg} alt="perfil" />
+            ) : (
+              <div style={s.avatar}>{iniciais}</div>
+            )}
+            <div style={s.cameraBadge}><Camera size={11} /></div>
+          </motion.button>
+
+          <AnimatePresence>
+            {pickingPhoto && (
+              <motion.div
+                style={s.photoPicker}
+                initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                transition={{ duration: 0.16 }}
+              >
+                <p style={s.pickerLabel}>Escolha uma foto</p>
+                <div style={s.photoGrid}>
+                  {/* default: initials */}
+                  <motion.button
+                    style={{ ...s.photoOption, borderColor: !usuario.photo ? 'var(--lime)' : 'var(--line)' }}
+                    onClick={() => escolherFoto(null)}
+                    whileTap={{ scale: 0.93 }}
+                  >
+                    <div style={{ ...s.avatar, width: 50, height: 50, fontSize: 16 }}>{iniciais}</div>
+                  </motion.button>
+                  {PROFILES.map(p => (
+                    <motion.button
+                      key={p.id}
+                      style={{ ...s.photoOption, borderColor: usuario.photo === p.id ? 'var(--lime)' : 'var(--line)' }}
+                      onClick={() => escolherFoto(p.id)}
+                      whileTap={{ scale: 0.93 }}
+                    >
+                      <img src={p.src} style={s.photoThumb} alt={p.id} />
+                    </motion.button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {editMode ? (
           <div style={s.editFields}>
@@ -179,9 +314,9 @@ export default function ProfilePage() {
       {!editMode && (
         <div style={s.stats}>
           {[
-            { label: 'Total',   value: stats.parties },
-            { label: 'Criadas', value: stats.criadas },
-            { label: 'Entradas', value: stats.parties - stats.criadas },
+            { label: 'Parties',  value: String(historico.length) },
+            { label: 'Streak 🔥', value: streak > 0 ? `${streak}` : '—' },
+            { label: 'Matches',  value: String(totalMatches) },
           ].map(({ label, value }) => (
             <div key={label} style={s.statItem}>
               <span style={s.statValue}>{value}</span>
@@ -263,6 +398,33 @@ export default function ProfilePage() {
                 )}
               </Section>
 
+              {/* Estatísticas */}
+              <Section title="Estatísticas">
+                {historico.length === 0 ? (
+                  <p style={s.emptyText}>Nenhuma party concluída ainda.</p>
+                ) : (
+                  <div style={s.statsCards}>
+                    {favCat && (
+                      <div style={s.statCard}>
+                        <span style={{ fontSize: 28 }}>{CATS.find(c => c.slug === favCat)?.emoji}</span>
+                        <p style={s.statCardVal}>{CATS.find(c => c.slug === favCat)?.nome}</p>
+                        <p style={s.statCardLabel}>Categoria favorita</p>
+                      </div>
+                    )}
+                    <div style={s.statCard}>
+                      <span style={{ fontSize: 28 }}>🔥</span>
+                      <p style={s.statCardVal}>{streak > 0 ? streak : '—'}</p>
+                      <p style={s.statCardLabel}>Semanas seguidas</p>
+                    </div>
+                    <div style={s.statCard}>
+                      <span style={{ fontSize: 28 }}>🎯</span>
+                      <p style={s.statCardVal}>{historico.length}</p>
+                      <p style={s.statCardLabel}>Parties encerradas</p>
+                    </div>
+                  </div>
+                )}
+              </Section>
+
               {/* Notificações */}
               <Section title="Notificações">
                 {[
@@ -295,25 +457,16 @@ export default function ProfilePage() {
           {/* ── Amigos tab ── */}
           {tab === 1 && (
             <motion.div key="amigos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-              <div style={s.emptyState}>
-                <span style={s.emptyIcon}>👥</span>
-                <p style={s.emptyTitle}>Em breve.</p>
-                <p style={s.emptyDesc}>A funcionalidade de amigos está sendo desenvolvida.</p>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── Histórico tab ── */}
-          {tab === 2 && (
-            <motion.div key="historico" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-              <div style={s.emptyState}>
-                <span style={s.emptyIcon}>✳</span>
-                <p style={s.emptyTitle}>Ver histórico completo.</p>
-                <p style={s.emptyDesc}>Todas as suas parties estão na aba Histórico.</p>
-                <button style={s.limeBtn} onClick={() => navigate('/historico')}>
-                  <Clock size={14} /> Ver histórico
-                </button>
-              </div>
+              <Section title="Amigos">
+                <div style={s.emptyState}>
+                  <span style={s.emptyIcon}>👥</span>
+                  <p style={s.emptyTitle}>Nenhum amigo ainda.</p>
+                  <p style={s.emptyDesc}>Adicione amigos para criar parties juntos.</p>
+                  <button style={s.limeBtn} onClick={() => setShowAddFriend(true)}>
+                    <UserPlus size={14} /> Adicionar amigo
+                  </button>
+                </div>
+              </Section>
             </motion.div>
           )}
 
@@ -331,6 +484,93 @@ export default function ProfilePage() {
           >
             <Check size={14} /> {toast}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Add Friend Sheet ── */}
+      <AnimatePresence>
+        {showAddFriend && (
+          <>
+            <motion.div
+              style={s.sheetBackdrop}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setShowAddFriend(false); setSearchAmigo(''); setSearchResultados([]) }}
+            />
+            <motion.div
+              style={s.sheet}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+            >
+              <div style={s.sheetHandle} />
+              <div style={s.sheetHeader}>
+                <p style={s.sheetTitle}>Adicionar amigo</p>
+                <button style={s.sheetClose} onClick={() => { setShowAddFriend(false); setSearchAmigo(''); setSearchResultados([]) }}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Search input */}
+              <div style={s.searchRow}>
+                <Search size={15} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
+                <input
+                  style={s.searchField}
+                  placeholder="Buscar por nome ou e-mail..."
+                  value={searchAmigo}
+                  onChange={e => setSearchAmigo(e.target.value)}
+                  autoFocus
+                />
+                {buscandoAmigo && <Loader2 size={15} style={{ color: 'var(--text-3)', flexShrink: 0, animation: 'spin 1s linear infinite' }} />}
+              </div>
+
+              {/* Results */}
+              {searchResultados.length > 0 && (
+                <div style={s.resultList}>
+                  {searchResultados.map(u => (
+                    <div key={u._id} style={s.resultRow}>
+                      <div style={s.resultAvatar}>
+                        {u.photo
+                          ? <img src={PROFILES.find(p => p.id === u.photo)?.src} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} alt={u.nome} />
+                          : <div style={{ ...s.avatar, width: 40, height: 40, fontSize: 14 }}>{u.nome?.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase() || '?'}</div>
+                        }
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={s.resultNome}>{u.nome}</p>
+                        <p style={s.resultEmail}>{u.email}</p>
+                      </div>
+                      {seguidos.has(u._id) ? (
+                        <span style={s.seguidoTag}><Check size={12} /> Seguindo</span>
+                      ) : (
+                        <motion.button style={s.seguirBtn} onClick={() => seguir(u._id)} whileTap={{ scale: 0.94 }}>
+                          <UserPlus size={13} /> Seguir
+                        </motion.button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {searchAmigo.trim() && !buscandoAmigo && searchResultados.length === 0 && (
+                <p style={{ fontSize: 13, color: 'var(--text-3)', textAlign: 'center', padding: '16px 0' }}>
+                  Nenhum usuário encontrado.
+                </p>
+              )}
+
+              {/* Invite section */}
+              <div style={s.inviteBox}>
+                <div style={s.inviteTextBlock}>
+                  <p style={s.inviteTitle}>Convidar amigo a criar conta</p>
+                  <p style={s.inviteDesc}>Compartilhe o link e chame seus amigos para o Hangr.</p>
+                </div>
+                <motion.button style={{ ...s.inviteBtn, background: linkCopiado ? 'var(--lime)' : 'var(--bg-3)', color: linkCopiado ? '#000' : '#fff' }} onClick={copiarLinkConvite} whileTap={{ scale: 0.95 }}>
+                  {linkCopiado ? <><Check size={12} /> Copiado</> : 'Copiar link'}
+                </motion.button>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
@@ -458,6 +698,17 @@ const s = {
   ghostBtn:  { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: 'transparent', color: 'var(--text-2)', fontWeight: 600, fontSize: 13, border: '1px solid var(--line)', borderRadius: 'var(--r-full)', cursor: 'pointer' },
   dangerBtn: { display: 'flex', alignItems: 'center', gap: 8, padding: '12px 0', color: '#FF4545', fontWeight: 600, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer' },
 
+  /* Stats cards */
+  statsCards: { display: 'flex', gap: 10, flexWrap: 'wrap' },
+  statCard: {
+    flex: '1 1 90px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+    gap: 4, padding: '16px 12px',
+    background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-xl)',
+    textAlign: 'center',
+  },
+  statCardVal:   { fontSize: 18, fontWeight: 900, letterSpacing: '-0.03em' },
+  statCardLabel: { fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.02em' },
+
   /* Toast */
   toast: {
     position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
@@ -465,5 +716,124 @@ const s = {
     padding: '10px 20px', background: 'var(--lime)', color: '#000',
     fontWeight: 700, fontSize: 13, borderRadius: 'var(--r-full)',
     boxShadow: '0 8px 24px rgba(0,0,0,0.4)', zIndex: 100, whiteSpace: 'nowrap',
+  },
+
+  /* Add friend sheet */
+  sheetBackdrop: {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+    zIndex: 200, backdropFilter: 'blur(2px)',
+  },
+  sheet: {
+    position: 'fixed', bottom: 0, left: 0, right: 0,
+    background: 'var(--bg-1)', borderRadius: '24px 24px 0 0',
+    border: '1px solid var(--line)', borderBottom: 'none',
+    padding: '0 20px 40px', zIndex: 201,
+    maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+    overflowY: 'auto',
+  },
+  sheetHandle: {
+    width: 36, height: 4, borderRadius: 2,
+    background: 'var(--line)', margin: '12px auto 0',
+    flexShrink: 0,
+  },
+  sheetHeader: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '16px 0 12px', flexShrink: 0,
+  },
+  sheetTitle: { fontSize: 16, fontWeight: 800, letterSpacing: '-0.03em' },
+  sheetClose: {
+    width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: '50%',
+    color: 'var(--text-2)', cursor: 'pointer',
+  },
+  searchRow: {
+    display: 'flex', alignItems: 'center', gap: 10,
+    background: 'var(--bg-2)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-lg)', padding: '11px 14px',
+    marginBottom: 16, flexShrink: 0,
+  },
+  searchField: {
+    flex: 1, background: 'none', border: 'none', outline: 'none',
+    color: '#fff', fontSize: 14,
+  },
+  resultList: { display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 20 },
+  resultRow: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    padding: '10px 0', borderBottom: '1px solid var(--line)',
+  },
+  resultAvatar: { flexShrink: 0 },
+  resultNome:  { fontSize: 14, fontWeight: 700, marginBottom: 2 },
+  resultEmail: { fontSize: 12, color: 'var(--text-3)' },
+  seguirBtn: {
+    display: 'flex', alignItems: 'center', gap: 5,
+    padding: '7px 14px', background: 'var(--lime)', color: '#000',
+    fontWeight: 700, fontSize: 12, border: 'none',
+    borderRadius: 'var(--r-full)', cursor: 'pointer', flexShrink: 0,
+  },
+  seguidoTag: {
+    display: 'flex', alignItems: 'center', gap: 4,
+    fontSize: 12, fontWeight: 600, color: 'var(--text-3)',
+    padding: '7px 12px', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-full)', flexShrink: 0,
+  },
+  inviteBox: {
+    display: 'flex', alignItems: 'center', gap: 14,
+    padding: '16px', marginTop: 8,
+    background: 'var(--bg-2)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-2xl)', flexShrink: 0,
+  },
+  inviteTextBlock: { flex: 1 },
+  inviteTitle: { fontSize: 14, fontWeight: 700, marginBottom: 3 },
+  inviteDesc:  { fontSize: 12, color: 'var(--text-2)', lineHeight: 1.4 },
+  inviteBtn: {
+    padding: '9px 16px', background: 'var(--bg-3)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-full)', color: '#fff', fontWeight: 700, fontSize: 12,
+    cursor: 'pointer', flexShrink: 0,
+  },
+
+  /* Avatar button */
+  avatarBtn: {
+    position: 'relative', display: 'block',
+    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+    borderRadius: '50%',
+  },
+  avatarImg: {
+    width: 80, height: 80, borderRadius: '50%',
+    objectFit: 'cover', display: 'block',
+    border: '3px solid var(--lime)',
+  },
+  cameraBadge: {
+    position: 'absolute', bottom: 2, right: 2,
+    width: 22, height: 22, borderRadius: '50%',
+    background: 'var(--bg-2)', border: '1px solid var(--line)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: 'var(--text-2)',
+  },
+
+  /* Photo picker */
+  photoPicker: {
+    position: 'absolute', top: 'calc(100% + 10px)', left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'var(--bg-2)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-2xl)', padding: '14px 16px',
+    zIndex: 100, boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+    minWidth: 280,
+  },
+  pickerLabel: {
+    fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+    textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 12,
+    textAlign: 'center',
+  },
+  photoGrid: {
+    display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap',
+  },
+  photoOption: {
+    padding: 3, background: 'none', borderRadius: '50%',
+    border: '2px solid', cursor: 'pointer',
+    transition: 'border-color .15s',
+  },
+  photoThumb: {
+    width: 50, height: 50, borderRadius: '50%',
+    objectFit: 'cover', display: 'block',
   },
 }

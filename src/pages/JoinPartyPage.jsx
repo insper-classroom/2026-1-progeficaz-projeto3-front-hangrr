@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { getPartyByCodigo, adicionarMembro } from '../services/api'
+import { pegarLocalizacao } from '../utils/geo'
 
 export default function JoinPartyPage() {
   const { codigo } = useParams()
   const navigate   = useNavigate()
-  const [erro, setErro] = useState('')
+  const [erro, setErro]   = useState('')
+  const [status, setStatus] = useState('localizando') // localizando | entrando
 
   useEffect(() => {
     entrar()
@@ -21,10 +23,20 @@ export default function JoinPartyPage() {
       return
     }
 
+    setStatus('localizando')
+    const geo = await pegarLocalizacao()
+
+    setStatus('entrando')
     try {
       const party = await getPartyByCodigo(codigo)
-      await adicionarMembro({ party_id: party._id, usuario_id: usuario._id })
-      navigate(`/party/${party._id}`)
+      await adicionarMembro({
+        codigo:     party.codigo_convite,
+        usuario_id: usuario._id,
+        lat:        geo?.lat      ?? null,
+        lng:        geo?.lng      ?? null,
+        accuracy:   geo?.accuracy ?? null,
+      })
+      navigate(`/party/${party.codigo_convite}`)
     } catch (err) {
       setErro(err.message || 'Convite inválido ou expirado.')
     }
@@ -41,7 +53,9 @@ export default function JoinPartyPage() {
   return (
     <div style={s.root}>
       <Loader2 size={24} style={{ color: 'var(--lime)', animation: 'spin 1s linear infinite' }} />
-      <p style={s.loading}>Entrando na party…</p>
+      <p style={s.loading}>
+        {status === 'localizando' ? 'Obtendo localização…' : 'Entrando na party…'}
+      </p>
     </div>
   )
 }

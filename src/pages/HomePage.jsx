@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Link2, User, ArrowRight, ChevronRight, MapPin } from 'lucide-react'
+import { Plus, Link2, Compass, User, ArrowRight, Users, MapPin, Loader2, ChevronRight } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 import { listarPartiesUsuario } from '../services/api'
 
@@ -12,18 +12,42 @@ const enter = (delay = 0) => ({
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const [usuario, setUsuario]     = useState(null)
-  const [parties, setParties]     = useState([])
-  const [showJoin, setShowJoin]   = useState(false)
-  const [codigo, setCodigo]       = useState('')
+  const [usuario, setUsuario]       = useState(null)
+  const [showJoin, setShowJoin]     = useState(false)
+  const [codigo, setCodigo]         = useState('')
+  const [parties, setParties]       = useState([])
+  const [loadingParties, setLoadingParties] = useState(false)
+  const [explorarHint, setExplorarHint]     = useState(false)
 
   useEffect(() => {
     const u = localStorage.getItem('hangr_user')
     if (!u) { navigate('/auth'); return }
     const parsed = JSON.parse(u)
     setUsuario(parsed)
-    listarPartiesUsuario(parsed._id).then(setParties).catch(() => {})
+    carregarParties(parsed._id)
   }, [navigate])
+
+  async function carregarParties(uid) {
+    setLoadingParties(true)
+    try {
+      const lista = await listarPartiesUsuario(uid)
+      setParties(lista || [])
+    } catch {
+      setParties([])
+    } finally {
+      setLoadingParties(false)
+    }
+  }
+
+  function handleExplorar() {
+    if (parties.length > 0) {
+      const ultima = parties[0]
+      navigate(`/party/${ultima.codigo_convite}`)
+    } else {
+      setExplorarHint(true)
+      setTimeout(() => setExplorarHint(false), 3000)
+    }
+  }
 
   const primeiroNome = usuario?.nome?.split(' ')[0] || 'aí'
 
@@ -33,7 +57,7 @@ export default function HomePage() {
       {/* ── NAV ── */}
       <nav style={s.nav}>
         <span style={{ ...s.logo, cursor: 'pointer' }} onClick={() => navigate('/home')}>hangr</span>
-        <button style={s.avatarBtn}><User size={16} /></button>
+        <button style={s.avatarBtn} onClick={() => navigate('/profile')}><User size={16} /></button>
       </nav>
 
       {/* ── CONTENT ── */}
@@ -104,6 +128,28 @@ export default function HomePage() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          <ActionCard
+            label="Explorar lugares"
+            desc={parties.length > 0 ? `Voltar para ${parties[0].titulo}` : 'Entre em uma party para explorar'}
+            icon={<Compass size={20} />}
+            color="#00E096"
+            onClick={handleExplorar}
+          />
+
+          <AnimatePresence>
+            {explorarHint && (
+              <motion.p
+                key="hint"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                style={s.explorarHint}
+              >
+                Crie ou entre em uma party primeiro para explorar lugares.
+              </motion.p>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* Parties */}
@@ -114,14 +160,44 @@ export default function HomePage() {
           transition={{ duration: 0.4, delay: 0.3 }}
         >
           <p style={s.sectionLabel}>Suas parties</p>
-          {parties.length === 0
-            ? <EmptyParties onCriar={() => navigate('/party/criar')} />
-            : <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {parties.map(p => (
-                  <PartyCardHome key={p._id} party={p} onClick={() => navigate(`/party/${p._id}`)} />
-                ))}
-              </div>
-          }
+
+          {loadingParties ? (
+            <div style={s.loadingRow}>
+              <Loader2 size={18} style={{ color: 'var(--lime)', animation: 'spin 1s linear infinite' }} />
+            </div>
+          ) : parties.length === 0 ? (
+            <EmptyParties onCriar={() => navigate('/party/criar')} />
+          ) : (
+            <motion.div
+              style={s.partyList}
+              initial="hidden" animate="show"
+              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
+            >
+              {parties.map(p => (
+                <motion.button
+                  key={p._id}
+                  style={s.partyCard}
+                  variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } }}
+                  onClick={() => navigate(`/party/${p.codigo_convite}`)}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div style={s.partyCardDot} />
+                  <div style={s.partyCardBody}>
+                    <p style={s.partyCardTitle}>{p.titulo}</p>
+                    <div style={s.partyCardMeta}>
+                      {p.cidade && (
+                        <span style={s.metaItem}><MapPin size={11} />{p.cidade}</span>
+                      )}
+                      <span style={s.metaItem}>
+                        <Users size={11} />{p.membros?.length ?? 0} participante{p.membros?.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight size={15} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
+                </motion.button>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
 
       </div>
@@ -164,24 +240,6 @@ function EmptyParties({ onCriar }) {
         <Plus size={14} /> Criar party
       </button>
     </div>
-  )
-}
-
-function PartyCardHome({ party, onClick }) {
-  const date = party.criada_em
-    ? new Date(party.criada_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-    : ''
-  return (
-    <button style={s.partyCard} onClick={onClick}>
-      <div style={s.partyDot} />
-      <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-        <p style={s.partyNome}>{party.titulo}</p>
-        <p style={s.partyMeta}>
-          {party.cidade && <><MapPin size={10} /> {party.cidade} · </>}{date}
-        </p>
-      </div>
-      <ChevronRight size={15} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
-    </button>
   )
 }
 
@@ -239,10 +297,36 @@ const s = {
   actionLabel: { fontSize: 14, fontWeight: 700, marginBottom: 3 },
   actionDesc:  { fontSize: 12, color: 'var(--text-2)', lineHeight: 1.45 },
 
+  explorarHint: {
+    fontSize: 12, color: 'var(--text-3)',
+    padding: '8px 12px',
+    background: 'var(--bg-1)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-lg)', marginTop: 2,
+  },
+
   section:      { display: 'flex', flexDirection: 'column', gap: 14 },
   sectionLabel: {
     fontSize: 11, fontWeight: 700, letterSpacing: '0.10em',
     textTransform: 'uppercase', color: 'var(--text-3)',
+  },
+
+  loadingRow: { display: 'flex', justifyContent: 'center', padding: '32px 0' },
+
+  partyList: { display: 'flex', flexDirection: 'column', gap: 8 },
+  partyCard: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    padding: '14px 16px',
+    background: 'var(--bg-1)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-xl)', cursor: 'pointer', textAlign: 'left', width: '100%',
+    transition: 'background .15s',
+  },
+  partyCardDot:  { width: 8, height: 8, borderRadius: '50%', background: 'var(--lime)', flexShrink: 0 },
+  partyCardBody: { flex: 1, minWidth: 0 },
+  partyCardTitle: { fontSize: 14, fontWeight: 700, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  partyCardMeta:  { display: 'flex', flexWrap: 'wrap', gap: '4px 12px' },
+  metaItem: {
+    display: 'inline-flex', alignItems: 'center', gap: 4,
+    fontSize: 11, color: 'var(--text-3)',
   },
 
   empty: {
@@ -254,14 +338,10 @@ const s = {
   emptyAsterisk: { fontSize: 40, color: 'var(--lime)', opacity: 0.4, lineHeight: 1, marginBottom: 4 },
   emptyTitle:    { fontSize: 16, fontWeight: 700 },
   emptyDesc:     { fontSize: 13, color: 'var(--text-2)' },
+
   joinRow:   { display: 'flex', gap: 8, padding: '4px 0 8px' },
   joinInput: { flex: 1, padding: '12px 14px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-lg)', color: '#fff', fontSize: 14, outline: 'none' },
   joinBtn:   { width: 44, height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--lime)', color: '#000', border: 'none', borderRadius: 'var(--r-lg)', cursor: 'pointer' },
-
-  partyCard: { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-xl)', cursor: 'pointer', width: '100%', transition: 'border-color .15s' },
-  partyDot:  { width: 8, height: 8, borderRadius: '50%', background: 'var(--lime)', flexShrink: 0 },
-  partyNome: { fontSize: 14, fontWeight: 700, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  partyMeta: { fontSize: 11, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 4 },
 
   emptyBtn: {
     display: 'flex', alignItems: 'center', gap: 6,
@@ -270,5 +350,4 @@ const s = {
     fontWeight: 700, fontSize: 13,
     borderRadius: 'var(--r-full)', border: 'none', cursor: 'pointer',
   },
-
 }
