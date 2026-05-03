@@ -127,6 +127,10 @@ export default function PartyPage() {
         const partyData = await getParty(codigo)
         setParty(partyData)
         setMembros(partyData.membros || [])
+        if (partyData.match) {
+          setMatch(partyData.match)
+          setView(v => (v === 'voted' || v === 'voting') ? 'revealing' : v)
+        }
       } catch {}
     }
     partyPollRef.current = setInterval(sincronizar, 4000)
@@ -213,6 +217,12 @@ export default function PartyPage() {
       setMembros(partyData.membros || [])
       const saved = JSON.parse(localStorage.getItem(`hangr_r_${partyData._id}`) || '{}')
       setReacoes(saved)
+
+      if (partyData.match) {
+        setMatch(partyData.match)
+        setView('result')
+        return
+      }
 
       const jaVotou = (partyData.votes || []).some(v => v.usuario_id === usuario._id)
       setView(jaVotou ? 'voted' : 'voting')
