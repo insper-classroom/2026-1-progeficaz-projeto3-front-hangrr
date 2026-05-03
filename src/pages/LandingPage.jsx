@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, ArrowUpRight } from 'lucide-react'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const enter = (delay = 0) => ({
   hidden: { opacity: 0, y: 24 },
@@ -9,6 +10,7 @@ const enter = (delay = 0) => ({
 
 export default function LandingPage() {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
 
   return (
     <div style={s.root}>
@@ -30,15 +32,15 @@ export default function LandingPage() {
         {/* Decorative starburst */}
         <div style={s.starburst} aria-hidden>✳</div>
 
-        <div style={s.heroInner}>
+        <div style={{ ...s.heroInner, gap: isMobile ? 32 : 60, padding: isMobile ? '60px 20px 40px' : '80px 28px' }}>
 
           {/* Left — headline + CTA */}
           <motion.div
-            style={s.heroLeft}
+            style={{ ...s.heroLeft, flex: isMobile ? '1 1 100%' : '1 1 360px' }}
             initial="hidden" animate="show"
             variants={{ hidden:{}, show:{ transition:{ staggerChildren:0.1 } } }}
           >
-            <motion.h1 variants={enter(0)} style={s.heroTitle}>
+            <motion.h1 variants={enter(0)} style={{ ...s.heroTitle, fontSize: isMobile ? 'clamp(38px, 12vw, 64px)' : 'clamp(52px, 7vw, 88px)' }}>
               Acabe<br />com a<br />indecisão.
             </motion.h1>
             <motion.p variants={enter(0.1)} style={s.heroSub}>
@@ -56,7 +58,7 @@ export default function LandingPage() {
 
           {/* Right — match card */}
           <motion.div
-            style={s.matchCard}
+            style={{ ...s.matchCard, width: isMobile ? '100%' : 260 }}
             initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}

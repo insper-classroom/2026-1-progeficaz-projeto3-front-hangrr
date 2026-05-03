@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, User, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { GoogleLogin } from '@react-oauth/google'
@@ -93,14 +94,15 @@ export default function AuthPage() {
   }
 
   const isCadastro = modo === 'cadastro'
+  const isMobile = useIsMobile()
 
   return (
-    <div style={s.root}>
+    <div style={{ ...s.root, padding: isMobile ? '60px 16px 32px' : '80px 24px 40px' }}>
       <Link to="/" style={s.back}><ArrowLeft size={15} /> Voltar</Link>
 
       <motion.div
         key={modo}
-        style={s.card}
+        style={{ ...s.card, padding: isMobile ? '28px 20px' : '40px 32px' }}
         initial="hidden" animate="show"
         variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
       >
@@ -157,7 +159,7 @@ export default function AuthPage() {
             theme="filled_black"
             shape="pill"
             text={isCadastro ? 'signup_with' : 'signin_with'}
-            width="356"
+            width={isMobile ? "280" : "356"}
           />
         </motion.div>
 

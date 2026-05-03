@@ -960,7 +960,7 @@ const s = {
 
   raioWrap:    { display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 14px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-xl)', marginBottom: 10 },
   raioLabel:   { display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-3)' },
-  raioRow:     { display: 'flex', gap: 6 },
+  raioRow:     { display: 'flex', gap: 6, flexWrap: 'wrap' },
   raioPill:    { padding: '6px 12px', fontSize: 12, fontWeight: 700, borderRadius: 'var(--r-full)', border: '1px solid var(--line)', background: 'var(--bg-2)', color: 'var(--text-2)', cursor: 'pointer' },
   raioPillOn:  { background: 'var(--lime)', borderColor: 'var(--lime)', color: '#000' },
   explorarBtn: { width: '100%', padding: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--bg-1)', border: '1px solid var(--line)', color: 'var(--text-1)', fontWeight: 700, fontSize: 15, borderRadius: 'var(--r-full)', cursor: 'pointer', marginBottom: 16 },
