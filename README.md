@@ -1,16 +1,61 @@
-# React + Vite
+# hangr — frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Cliente React do Hangr. Cria parties com amigos, vota em categorias de rolê e descobre lugares próximos baseado na localização do grupo.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19 + Vite
+- Framer Motion (animações)
+- Lucide React (ícones)
+- React Router DOM
+- React Leaflet (mapa de lugares)
+- @react-oauth/google (login com Google)
 
-## React Compiler
+## Rodando localmente
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+cd hangr-frontend
+npm install
+```
 
-## Expanding the ESLint configuration
+Crie um `.env` na raiz do frontend:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
+VITE_API_URL=http://localhost:8000
+VITE_GOOGLE_CLIENT_ID=...
+```
+
+Depois:
+
+```bash
+npm run dev
+```
+
+Abre em `http://localhost:5173`.
+
+## Páginas
+
+- `/auth` — login e cadastro (email/senha ou Google)
+- `/onboarding` — seleção de categorias favoritas no primeiro acesso
+- `/home` — parties do usuário, criar nova party, entrar com código
+- `/party/criar` — formulário de criação
+- `/party/join/:codigo` — entrar numa party pelo link de convite
+- `/party/:codigo` — tela principal da party (votação, resultado, chat, explorar lugares)
+- `/explorar` — busca pública de lugares por categoria e cidade
+- `/historico` — feed social de parties encerradas
+- `/profile` — perfil, categorias favoritas, seguir pessoas
+
+## Variáveis de ambiente
+
+| Variável | Descrição |
+|----------|-----------|
+| `VITE_API_URL` | URL base da API Flask |
+| `VITE_GOOGLE_CLIENT_ID` | Client ID do Google OAuth |
+
+## Build
+
+```bash
+npm run build
+```
+
+Gera os arquivos estáticos em `dist/`.
