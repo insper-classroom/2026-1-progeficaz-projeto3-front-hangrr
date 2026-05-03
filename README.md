@@ -2,7 +2,7 @@
 
 Cliente React do Hangr.
 
-**Deploy:** https://hangr.com.br | **API:** https://hangr.com.br/api Cria parties com amigos, vota em categorias de rolê e descobre lugares próximos baseado na localização do grupo.
+**Deploy:** http://hangr.com.br | **API:** http://hangr.com.br/api Cria parties com amigos, vota em categorias de rolê e descobre lugares próximos baseado na localização do grupo.
 
 ## Stack
 
