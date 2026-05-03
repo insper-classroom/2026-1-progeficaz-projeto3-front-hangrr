@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Pencil, Check, X, LogOut, Bell, UserPlus, ChevronRight, Camera, Search, Loader2 } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 import LocationPicker from '../components/LocationPicker'
-import { buscarUsuarios, seguirUsuario } from '../services/api'
+import { buscarUsuarios, seguirUsuario, atualizarUsuario, salvarPreferencias, listarPartiesUsuario } from '../services/api'
 
 import p1 from '../assets/profiles/black_male_face.png'
 import p2 from '../assets/profiles/asian_woman_face.png'
@@ -29,6 +29,17 @@ const CATS = [
 ]
 
 const TABS = ['Perfil', 'Amigos']
+
+function calcMatchFromVotes(votes) {
+  const c = {}
+  for (const v of (votes || [])) {
+    for (const cat of (v.categorias || [])) {
+      if (cat.slug) c[cat.slug] = (c[cat.slug] || 0) + (cat.forca || 1)
+    }
+  }
+  const r = Object.entries(c).sort((a, b) => b[1] - a[1])
+  return r[0]?.[0] || null
+}
 
 function calcularStreak(historico) {
   if (!historico.length) return 0
@@ -86,6 +97,9 @@ export default function ProfilePage() {
   /* toast */
   const [toast, setToast] = useState(null)
 
+  /* parties loaded from API for stats */
+  const [partiesData, setPartiesData] = useState([])
+
   /* ── Load ── */
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem('hangr_user') || 'null')
@@ -98,6 +112,7 @@ export default function ProfilePage() {
     setCidadeEdit(u.cidade || '')
     if (p?.categorias) setSelCats(new Set(p.categorias.map(c => c.slug)))
     if (n) setNotifs(n)
+    listarPartiesUsuario(u._id).then(ps => setPartiesData(ps || [])).catch(() => {})
   }, [navigate])
 
   /* ── Helpers ── */
@@ -106,10 +121,18 @@ export default function ProfilePage() {
     setTimeout(() => setToast(null), 2200)
   }
 
-  function salvarPerfil() {
-    const updated = { ...usuario, nome: nomeEdit, cidade: editCidade && cidadeEdit ? cidadeEdit : usuario.cidade }
-    localStorage.setItem('hangr_user', JSON.stringify(updated))
-    setUsuario(updated)
+  async function salvarPerfil() {
+    const campos = { nome: nomeEdit }
+    if (editCidade && cidadeEdit) campos.cidade = cidadeEdit
+    try {
+      const atualizado = await atualizarUsuario(usuario._id, campos)
+      localStorage.setItem('hangr_user', JSON.stringify(atualizado))
+      setUsuario(atualizado)
+    } catch {
+      const fallback = { ...usuario, nome: nomeEdit, ...(editCidade && cidadeEdit ? { cidade: cidadeEdit } : {}) }
+      localStorage.setItem('hangr_user', JSON.stringify(fallback))
+      setUsuario(fallback)
+    }
     setEditMode(false)
     setEditCidade(false)
     showToast('Perfil salvo!')
@@ -132,10 +155,12 @@ export default function ProfilePage() {
     showToast('Foto atualizada!')
   }
 
-  function salvarGostos() {
-    const updated = { ...prefs, categorias: [...selCats].map(slug => ({ slug, forca: 1, subs: [] })) }
+  async function salvarGostos() {
+    const cats = [...selCats].map(slug => ({ slug, forca: 1, subs: [] }))
+    const updated = { ...prefs, categorias: cats }
     localStorage.setItem('hangr_prefs', JSON.stringify(updated))
     setPrefs(updated)
+    try { await salvarPreferencias({ usuario_id: usuario._id, categorias: cats }) } catch {}
     setEditGostos(false)
     showToast('Gostos salvos!')
   }
@@ -153,7 +178,7 @@ export default function ProfilePage() {
   }
 
   function copiarLinkConvite() {
-    const link = 'https://www.hangr.com.br/registrar'
+    const link = `${window.location.origin}/auth?modo=cadastro`
     navigator.clipboard.writeText(link).then(() => {
       setLinkCopiado(true)
       setTimeout(() => setLinkCopiado(false), 2200)
@@ -189,17 +214,17 @@ export default function ProfilePage() {
     return () => clearTimeout(t)
   }, [searchAmigo])
 
-  // ── Stats from historico (hooks must be before any early return) ────────
-  const historico = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem('hangr_historico') || '[]') } catch { return [] }
-  }, [])
-  const streak       = useMemo(() => calcularStreak(historico), [historico])
-  const totalMatches = historico.filter(p => p.match).length
-  const favCat = useMemo(() => {
+  // ── Stats from API parties (hooks must be before any early return) ────────
+  const streak       = useMemo(() => calcularStreak(partiesData), [partiesData])
+  const totalMatches = useMemo(() => partiesData.filter(p => calcMatchFromVotes(p.votes || []) !== null).length, [partiesData])
+  const favCat       = useMemo(() => {
     const freq = {}
-    historico.forEach(p => { if (p.match) freq[p.match] = (freq[p.match] || 0) + 1 })
+    partiesData.forEach(p => {
+      const m = calcMatchFromVotes(p.votes || [])
+      if (m) freq[m] = (freq[m] || 0) + 1
+    })
     return Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] || null
-  }, [historico])
+  }, [partiesData])
 
   if (!usuario) return null
 
@@ -314,7 +339,7 @@ export default function ProfilePage() {
       {!editMode && (
         <div style={s.stats}>
           {[
-            { label: 'Parties',  value: String(historico.length) },
+            { label: 'Parties',  value: String(partiesData.length) },
             { label: 'Streak 🔥', value: streak > 0 ? `${streak}` : '—' },
             { label: 'Matches',  value: String(totalMatches) },
           ].map(({ label, value }) => (
@@ -400,8 +425,8 @@ export default function ProfilePage() {
 
               {/* Estatísticas */}
               <Section title="Estatísticas">
-                {historico.length === 0 ? (
-                  <p style={s.emptyText}>Nenhuma party concluída ainda.</p>
+                {partiesData.length === 0 ? (
+                  <p style={s.emptyText}>Nenhuma party ainda.</p>
                 ) : (
                   <div style={s.statsCards}>
                     {favCat && (
@@ -418,8 +443,8 @@ export default function ProfilePage() {
                     </div>
                     <div style={s.statCard}>
                       <span style={{ fontSize: 28 }}>🎯</span>
-                      <p style={s.statCardVal}>{historico.length}</p>
-                      <p style={s.statCardLabel}>Parties encerradas</p>
+                      <p style={s.statCardVal}>{partiesData.length}</p>
+                      <p style={s.statCardLabel}>Parties</p>
                     </div>
                   </div>
                 )}
@@ -539,7 +564,7 @@ export default function ProfilePage() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={s.resultNome}>{u.nome}</p>
-                        <p style={s.resultEmail}>{u.email}</p>
+                        {u.cidade && <p style={s.resultEmail}>{u.cidade}</p>}
                       </div>
                       {seguidos.has(u._id) ? (
                         <span style={s.seguidoTag}><Check size={12} /> Seguindo</span>
