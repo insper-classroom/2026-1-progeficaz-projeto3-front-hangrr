@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Pencil, Check, X, LogOut, Bell, UserPlus, ChevronRight, Camera, Search, Loader2 } from 'lucide-react'
+import { Pencil, Check, X, LogOut, UserPlus, ChevronRight, Camera, Search, Loader2 } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 import LocationPicker from '../components/LocationPicker'
 import { buscarUsuarios, seguirUsuario, atualizarUsuario, salvarPreferencias, listarPartiesUsuario, getCategorias } from '../services/api'
@@ -82,9 +82,6 @@ export default function ProfilePage() {
   const [seguidos, setSeguidos]             = useState(new Set())
   const [linkCopiado, setLinkCopiado]       = useState(false)
 
-  /* notifications */
-  const [notifs, setNotifs] = useState({ party: true, match: true, amigos: false, novidades: false })
-
   /* toast */
   const [toast, setToast] = useState(null)
 
@@ -96,14 +93,12 @@ export default function ProfilePage() {
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem('hangr_user') || 'null')
     const p = JSON.parse(localStorage.getItem('hangr_prefs') || 'null')
-    const n = JSON.parse(localStorage.getItem('hangr_notifs') || 'null')
     if (!u) { navigate('/auth'); return }
     setUsuario(u)
     setPrefs(p)
     setNomeEdit(u.nome || '')
     setCidadeEdit(u.cidade || '')
     if (p?.categorias) setSelCats(new Set(p.categorias.map(c => c.slug)))
-    if (n) setNotifs(n)
     listarPartiesUsuario(u._id).then(ps => setPartiesData(ps || [])).catch(() => {})
     getCategorias().then(setCats).catch(() => {})
   }, [navigate])
@@ -158,12 +153,6 @@ export default function ProfilePage() {
     showToast('Gostos salvos!')
   }
 
-  function toggleNotif(key) {
-    const updated = { ...notifs, [key]: !notifs[key] }
-    setNotifs(updated)
-    localStorage.setItem('hangr_notifs', JSON.stringify(updated))
-  }
-
   async function seguir(alvo_id) {
     if (!usuario?._id) return
     setSeguidos(prev => new Set([...prev, alvo_id]))
@@ -189,7 +178,6 @@ export default function ProfilePage() {
   function sair() {
     localStorage.removeItem('hangr_user')
     localStorage.removeItem('hangr_prefs')
-    localStorage.removeItem('hangr_notifs')
     navigate('/')
   }
 
@@ -443,25 +431,6 @@ export default function ProfilePage() {
                 )}
               </Section>
 
-              {/* Notificações */}
-              <Section title="Notificações">
-                {[
-                  { key: 'party',     icon: <Bell size={15} />, label: 'Atividade na party',     desc: 'Quando alguém entra ou sai' },
-                  { key: 'match',     icon: <Check size={15} />, label: 'Match encontrado',       desc: 'Quando o app decide um lugar' },
-                  { key: 'amigos',    icon: <UserPlus size={15} />, label: 'Convites de amigos',  desc: 'Quando alguém te adiciona' },
-                  { key: 'novidades', icon: <Bell size={15} />, label: 'Novidades do Hangr',      desc: 'Atualizações e novas features' },
-                ].map(({ key, icon, label, desc }) => (
-                  <div key={key} style={s.notifRow}>
-                    <div style={s.notifIcon}>{icon}</div>
-                    <div style={s.notifBody}>
-                      <p style={s.notifLabel}>{label}</p>
-                      <p style={s.notifDesc}>{desc}</p>
-                    </div>
-                    <Toggle on={notifs[key]} onChange={() => toggleNotif(key)} />
-                  </div>
-                ))}
-              </Section>
-
               {/* Conta */}
               <Section title="Conta">
                 <button style={s.dangerBtn} onClick={sair}>
@@ -612,25 +581,6 @@ function Section({ title, action, children }) {
   )
 }
 
-/* ─── Toggle switch ──────────────────────────────────────────────────── */
-function Toggle({ on, onChange }) {
-  return (
-    <button
-      style={{
-        ...s.toggle,
-        background: on ? 'var(--lime)' : 'var(--bg-3)',
-      }}
-      onClick={onChange}
-    >
-      <motion.div
-        style={s.toggleThumb}
-        animate={{ left: on ? 22 : 3, background: on ? '#000' : 'var(--text-3)' }}
-        transition={{ duration: 0.18 }}
-      />
-    </button>
-  )
-}
-
 /* ─── Styles ─────────────────────────────────────────────────────────── */
 const s = {
   root: { minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', paddingBottom: 80 },
@@ -691,17 +641,6 @@ const s = {
   catCard: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: '1px solid', borderRadius: 'var(--r-xl)', cursor: 'pointer', width: '100%', transition: 'background .18s, border-color .18s, color .18s' },
   chips:   { display: 'flex', flexWrap: 'wrap', gap: 8 },
   chip:    { display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid', borderRadius: 'var(--r-full)', fontSize: 13, fontWeight: 600 },
-
-  /* Notifications */
-  notifRow:  { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0', borderBottom: '1px solid var(--line)' },
-  notifIcon: { width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-2)', borderRadius: 'var(--r-md)', color: 'var(--text-2)', flexShrink: 0 },
-  notifBody: { flex: 1 },
-  notifLabel:{ fontSize: 14, fontWeight: 600, marginBottom: 2 },
-  notifDesc: { fontSize: 12, color: 'var(--text-2)' },
-
-  /* Toggle */
-  toggle:      { width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0, transition: 'background .2s' },
-  toggleThumb: { position: 'absolute', top: 3, width: 18, height: 18, borderRadius: '50%' },
 
   /* Friends / history empty */
   searchInput: { width: '100%', padding: '12px 14px', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-lg)', color: '#fff', fontSize: 14, outline: 'none', marginBottom: 20 },

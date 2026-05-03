@@ -14,6 +14,16 @@ import {
   getCategorias, getConfiguracoes,
 } from '../services/api'
 
+function calcularIdade(dob) {
+  if (!dob) return null
+  const hoje = new Date()
+  const nasc = new Date(dob)
+  let idade = hoje.getFullYear() - nasc.getFullYear()
+  const m = hoje.getMonth() - nasc.getMonth()
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--
+  return idade
+}
+
 const AVATAR_PALETTE = [
   { bg: '#CCFF00', text: '#000' },
   { bg: '#FF3D8A', text: '#fff' },
@@ -34,7 +44,12 @@ export default function PartyPage() {
   // ── Remote data ─────────────────────────────────────────────────────────
   const [cats, setCats]   = useState([])
   const [config, setConfig] = useState({})
-  const catsMap    = useMemo(() => Object.fromEntries(cats.map(c => [c.slug, c])), [cats])
+  const catsMap       = useMemo(() => Object.fromEntries(cats.map(c => [c.slug, c])), [cats])
+  const catsVisiveis  = useMemo(() => {
+    const idade = calcularIdade(usuario.data_nascimento)
+    if (idade !== null && idade < 18) return cats.filter(c => c.slug !== 'bares')
+    return cats
+  }, [cats, usuario.data_nascimento])
   const raios      = useMemo(() => config.raios_busca    || [{label:'500m',value:500},{label:'1km',value:1000},{label:'2km',value:2000},{label:'5km',value:5000},{label:'10km',value:10000}], [config])
   const reacaoEmojis = useMemo(() => config.reacao_emojis  || ['🔥','😍','😭','🤙','👏'], [config])
   const timerOpts  = useMemo(() => config.timer_opcoes   || [1,2,5,10], [config])
@@ -79,6 +94,7 @@ export default function PartyPage() {
   const nickInputRef  = useRef(null)
   const timerRef      = useRef(null)
   const chatPollRef   = useRef(null)
+  const partyPollRef  = useRef(null)
   const chatBottomRef = useRef(null)
   const chatInputRef  = useRef(null)
   const encerrarRef   = useRef(null)
@@ -96,8 +112,26 @@ export default function PartyPage() {
     return () => {
       clearInterval(timerRef.current)
       clearInterval(chatPollRef.current)
+      clearInterval(partyPollRef.current)
     }
   }, [])
+
+  // ── Real-time party sync (members + votes) ──────────────────────────────
+  useEffect(() => {
+    if (view === 'loading' || view === 'revealing' || view === 'result') {
+      clearInterval(partyPollRef.current)
+      return
+    }
+    const sincronizar = async () => {
+      try {
+        const partyData = await getParty(codigo)
+        setParty(partyData)
+        setMembros(partyData.membros || [])
+      } catch {}
+    }
+    partyPollRef.current = setInterval(sincronizar, 4000)
+    return () => clearInterval(partyPollRef.current)
+  }, [view, codigo])
 
   // ── Load party + remote config ──────────────────────────────────────────
   useEffect(() => {
@@ -485,7 +519,7 @@ export default function PartyPage() {
               <p style={s.sectionSub}>Selecione um ou mais.</p>
 
               <div style={s.catGrid}>
-                {cats.map(cat => {
+                {catsVisiveis.map(cat => {
                   const on = selCats.has(cat.slug)
                   return (
                     <motion.button
