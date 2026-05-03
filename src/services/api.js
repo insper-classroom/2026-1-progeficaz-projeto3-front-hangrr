@@ -139,6 +139,16 @@ export async function buscarUsuarios(q, usuario_id) {
   return d.usuarios
 }
 
+// ── Google OAuth ──────────────────────────────────────────────────────
+
+export async function loginComGoogle(credential) {
+  return req('/login/google', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credential }),
+  })
+}
+
 // ── Chat ──────────────────────────────────────────────────────────────────
 
 export async function getChatMensagens(codigo) {

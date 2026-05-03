@@ -2,7 +2,8 @@ import { useState, useRef } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, User, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
-import { criarUsuario, loginUsuario } from '../services/api'
+import { GoogleLogin } from '@react-oauth/google'
+import { criarUsuario, loginUsuario, loginComGoogle } from '../services/api'
 
 const fadeUp = (delay = 0) => ({
   hidden: { opacity: 0, y: 20 },
@@ -27,6 +28,28 @@ export default function AuthPage() {
     setModo(m)
     setErro('')
     setNome(''); setEmail(''); setSenha(''); setConfirmar('')
+  }
+
+  async function handleGoogle(credentialResponse) {
+    setErro('')
+    setCarregando(true)
+    try {
+      const data = await loginComGoogle(credentialResponse.credential)
+      localStorage.setItem('hangr_user', JSON.stringify(data.usuario))
+      const pendingJoin = localStorage.getItem('hangr_join_pendente')
+      if (pendingJoin) {
+        localStorage.removeItem('hangr_join_pendente')
+        navigate(`/party/join/${pendingJoin}`)
+      } else if (data.novo) {
+        navigate('/onboarding')
+      } else {
+        navigate('/home')
+      }
+    } catch (err) {
+      setErro(err.message || 'Erro ao entrar com Google.')
+    } finally {
+      setCarregando(false)
+    }
   }
 
   async function handleSubmit() {
@@ -121,7 +144,24 @@ export default function AuthPage() {
             : <>{isCadastro ? 'Criar conta' : 'Entrar'} <ArrowRight size={15} /></>}
         </motion.button>
 
-        <motion.p variants={fadeUp(0.22)} style={s.toggle}>
+        <motion.div variants={fadeUp(0.22)} style={s.divider}>
+          <span style={s.dividerLine} />
+          <span style={s.dividerText}>ou</span>
+          <span style={s.dividerLine} />
+        </motion.div>
+
+        <motion.div variants={fadeUp(0.25)} style={s.googleWrap}>
+          <GoogleLogin
+            onSuccess={handleGoogle}
+            onError={() => setErro('Erro ao entrar com Google.')}
+            theme="filled_black"
+            shape="pill"
+            text={isCadastro ? 'signup_with' : 'signin_with'}
+            width="356"
+          />
+        </motion.div>
+
+        <motion.p variants={fadeUp(0.28)} style={s.toggle}>
           {isCadastro ? 'Já tem conta?' : 'Não tem conta?'}{' '}
           <button style={s.toggleBtn} onClick={() => trocarModo(isCadastro ? 'login' : 'cadastro')}>
             {isCadastro ? 'Entrar' : 'Criar conta'}
@@ -187,6 +227,10 @@ const s = {
   eyeBtn: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', display: 'flex', alignItems: 'center', padding: 0, flexShrink: 0 },
   error: { fontSize: 13, color: '#FCA5A5', padding: '10px 14px', background: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.2)', borderRadius: 'var(--r-md)', marginTop: 2 },
   btn:   { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '14px', background: '#fff', color: '#000', fontWeight: 700, fontSize: 14, borderRadius: 'var(--r-full)', cursor: 'pointer', marginTop: 6, border: 'none' },
+  divider:     { display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 },
+  dividerLine: { flex: 1, height: 1, background: 'var(--line)' },
+  dividerText: { fontSize: 12, color: 'var(--text-3)', fontWeight: 600, letterSpacing: '0.04em' },
+  googleWrap:  { display: 'flex', justifyContent: 'center' },
   toggle:    { fontSize: 13, color: 'var(--text-2)', textAlign: 'center', marginTop: 4 },
   toggleBtn: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--lime)', fontWeight: 700, fontSize: 13, padding: 0 },
 }
