@@ -161,7 +161,7 @@ export default function LandingPage() {
       {/* ── FOOTER ── */}
       <footer style={s.footer}>
         <span style={s.footerLogo}>hangr</span>
-        <span style={s.footerText}>© 2025</span>
+        <span style={s.footerText}>© 2026</span>
       </footer>
     </div>
   )
