@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Link2, Compass, User, ArrowRight, Users, MapPin, Loader2, ChevronRight } from 'lucide-react'
+import { Plus, Link2, User, ArrowRight, Users, MapPin, Loader2, ChevronRight } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 import { listarPartiesUsuario } from '../services/api'
 
@@ -17,7 +17,6 @@ export default function HomePage() {
   const [codigo, setCodigo]         = useState('')
   const [parties, setParties]       = useState([])
   const [loadingParties, setLoadingParties] = useState(false)
-  const [explorarHint, setExplorarHint]     = useState(false)
 
   useEffect(() => {
     const u = localStorage.getItem('hangr_user')
@@ -36,16 +35,6 @@ export default function HomePage() {
       setParties([])
     } finally {
       setLoadingParties(false)
-    }
-  }
-
-  function handleExplorar() {
-    if (parties.length > 0) {
-      const ultima = parties[0]
-      navigate(`/party/${ultima.codigo_convite}`)
-    } else {
-      setExplorarHint(true)
-      setTimeout(() => setExplorarHint(false), 3000)
     }
   }
 
@@ -129,27 +118,6 @@ export default function HomePage() {
             )}
           </AnimatePresence>
 
-          <ActionCard
-            label="Explorar lugares"
-            desc={parties.length > 0 ? `Voltar para ${parties[0].titulo}` : 'Entre em uma party para explorar'}
-            icon={<Compass size={20} />}
-            color="#00E096"
-            onClick={handleExplorar}
-          />
-
-          <AnimatePresence>
-            {explorarHint && (
-              <motion.p
-                key="hint"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                style={s.explorarHint}
-              >
-                Crie ou entre em uma party primeiro para explorar lugares.
-              </motion.p>
-            )}
-          </AnimatePresence>
         </motion.div>
 
         {/* Parties */}
