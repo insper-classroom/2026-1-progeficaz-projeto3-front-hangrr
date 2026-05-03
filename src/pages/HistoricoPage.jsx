@@ -3,16 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, MapPin, UserPlus, X, Check, Loader2, Search, UserCheck } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
-import { getFeed, listarSeguindo, seguirUsuario, deixarDeSeguir, buscarUsuarios } from '../services/api'
-
-const CATS_MAP = {
-  restaurantes: { nome: 'Restaurantes', emoji: '🍽️' },
-  bares:        { nome: 'Bares',        emoji: '🍺' },
-  cafes:        { nome: 'Cafés',        emoji: '☕' },
-  jogos:        { nome: 'Jogos',        emoji: '🎮' },
-  parque:       { nome: 'Parque',       emoji: '🌳' },
-  esportes:     { nome: 'Esportes',     emoji: '⚽' },
-}
+import { getFeed, listarSeguindo, seguirUsuario, deixarDeSeguir, buscarUsuarios, getCategorias } from '../services/api'
 
 function formatData(str) {
   if (!str) return ''
@@ -37,12 +28,14 @@ export default function FeedPage() {
   const [results, setResults]       = useState([])
   const [searching, setSearching]   = useState(false)
   const [pendente, setPendente]     = useState({}) // { id: 'seguindo'|'removendo' }
+  const [catsMap, setCatsMap]       = useState({})
 
   const debounceRef = useRef(null)
 
   useEffect(() => {
     if (!usuario._id) { navigate('/auth'); return }
     carregarTudo()
+    getCategorias().then(cats => setCatsMap(Object.fromEntries(cats.map(c => [c.slug, c])))).catch(() => {})
   }, [])
 
   async function carregarTudo() {
@@ -215,7 +208,7 @@ export default function FeedPage() {
             variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
           >
             {feed.map(party => (
-              <FeedCard key={party._id} party={party} meuId={usuario._id} />
+              <FeedCard key={party._id} party={party} meuId={usuario._id} catsMap={catsMap} />
             ))}
           </motion.div>
         )}
@@ -253,8 +246,8 @@ function UserRow({ user, seguindo, loading, onSeguir, onDeixar }) {
   )
 }
 
-function FeedCard({ party, meuId }) {
-  const cat  = CATS_MAP[party.match]
+function FeedCard({ party, meuId, catsMap }) {
+  const cat  = catsMap[party.match]
   const data = formatData(party.encerrada_em || party.criada_em)
 
   return (

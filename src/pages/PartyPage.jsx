@@ -11,25 +11,8 @@ import {
   getParty, votarParty, calcularMatch,
   atualizarNicknameMembro, kickarMembro, encerrarParty,
   getChatMensagens, enviarMensagemChat,
+  getCategorias, getConfiguracoes,
 } from '../services/api'
-
-const CATS = [
-  { slug: 'restaurantes', nome: 'Restaurantes', emoji: '🍽️', cor: '#CCFF00', corTexto: '#000' },
-  { slug: 'bares',        nome: 'Bares',        emoji: '🍺', cor: '#FF3D8A', corTexto: '#fff' },
-  { slug: 'cafes',        nome: 'Cafés',        emoji: '☕', cor: '#F5C842', corTexto: '#000' },
-  { slug: 'jogos',        nome: 'Jogos',        emoji: '🎮', cor: '#3D8AFF', corTexto: '#fff' },
-  { slug: 'parque',       nome: 'Parque',       emoji: '🌳', cor: '#00E096', corTexto: '#000' },
-  { slug: 'esportes',     nome: 'Esportes',     emoji: '⚽', cor: '#FF5C3A', corTexto: '#fff' },
-]
-const CATS_MAP = Object.fromEntries(CATS.map(c => [c.slug, c]))
-
-const RAIOS = [
-  { label: '500m', value: 500 },
-  { label: '1km',  value: 1000 },
-  { label: '2km',  value: 2000 },
-  { label: '5km',  value: 5000 },
-  { label: '10km', value: 10000 },
-]
 
 const AVATAR_PALETTE = [
   { bg: '#CCFF00', text: '#000' },
@@ -42,13 +25,19 @@ const AVATAR_PALETTE = [
   { bg: '#00CED1', text: '#000' },
 ]
 
-const REACAO_EMOJIS = ['🔥', '😍', '😭', '🤙', '👏']
-const TIMER_OPTS    = [1, 2, 5, 10]
 
 export default function PartyPage() {
   const { codigo } = useParams()
   const navigate   = useNavigate()
   const usuario    = JSON.parse(localStorage.getItem('hangr_user') || '{}')
+
+  // ── Remote data ─────────────────────────────────────────────────────────
+  const [cats, setCats]   = useState([])
+  const [config, setConfig] = useState({})
+  const catsMap    = useMemo(() => Object.fromEntries(cats.map(c => [c.slug, c])), [cats])
+  const raios      = useMemo(() => config.raios_busca    || [{label:'500m',value:500},{label:'1km',value:1000},{label:'2km',value:2000},{label:'5km',value:5000},{label:'10km',value:10000}], [config])
+  const reacaoEmojis = useMemo(() => config.reacao_emojis  || ['🔥','😍','😭','🤙','👏'], [config])
+  const timerOpts  = useMemo(() => config.timer_opcoes   || [1,2,5,10], [config])
 
   // ── Core state ─────────────────────────────────────────────────────────
   const [view, setView]         = useState('loading')
@@ -110,10 +99,12 @@ export default function PartyPage() {
     }
   }, [])
 
-  // ── Load party ──────────────────────────────────────────────────────────
+  // ── Load party + remote config ──────────────────────────────────────────
   useEffect(() => {
     if (!usuario._id) { navigate('/auth'); return }
     carregar()
+    getCategorias().then(setCats).catch(() => {})
+    getConfiguracoes().then(setConfig).catch(() => {})
   }, [codigo])
 
   // ── Nick input focus ────────────────────────────────────────────────────
@@ -124,7 +115,7 @@ export default function PartyPage() {
   // ── Emoji cycling during revealing ──────────────────────────────────────
   useEffect(() => {
     if (view !== 'revealing') return
-    const emojis = CATS.map(c => c.emoji)
+    const emojis = cats.map(c => c.emoji)
     let i = 0
     const t = setInterval(() => {
       i++
@@ -368,7 +359,7 @@ export default function PartyPage() {
 
   if (view === 'loading') return <Loading />
 
-  const winner = match?.match ? CATS_MAP[match.match] : null
+  const winner = match?.match ? catsMap[match.match] : null
 
   return (
     <div style={s.root}>
@@ -487,7 +478,7 @@ export default function PartyPage() {
                       exit={{ opacity: 0, y: -6, scale: 0.95 }}
                       transition={{ duration: 0.14 }}
                     >
-                      {TIMER_OPTS.map(m => (
+                      {timerOpts.map(m => (
                         <button key={m} style={s.timerOpt} onClick={() => iniciarTimer(m)}>
                           {m}min
                         </button>
@@ -513,7 +504,7 @@ export default function PartyPage() {
               <p style={s.sectionSub}>Selecione um ou mais.</p>
 
               <div style={s.catGrid}>
-                {CATS.map(cat => {
+                {cats.map(cat => {
                   const on = selCats.has(cat.slug)
                   return (
                     <motion.button
@@ -634,7 +625,7 @@ export default function PartyPage() {
 
               {/* Reactions */}
               <div style={s.reacoes}>
-                {REACAO_EMOJIS.map(emoji => (
+                {reacaoEmojis.map(emoji => (
                   <motion.button
                     key={emoji}
                     style={s.reacaoBtn}
@@ -651,7 +642,7 @@ export default function PartyPage() {
               <div style={s.raioWrap}>
                 <p style={s.raioLabel}><MapPin size={11} /> Distância de mim</p>
                 <div style={s.raioRow}>
-                  {RAIOS.map(r => (
+                  {raios.map(r => (
                     <button
                       key={r.value}
                       style={{ ...s.raioPill, ...(raio === r.value ? s.raioPillOn : {}) }}
@@ -675,7 +666,7 @@ export default function PartyPage() {
                 <div style={s.ranking}>
                   <p style={s.rankingLabel}>Todos os votos</p>
                   {match.ranking.map((item, i) => {
-                    const cat = CATS_MAP[item.slug]
+                    const cat = catsMap[item.slug]
                     if (!cat) return null
                     const pct = Math.round((item.votos / match.ranking[0].votos) * 100)
                     return (

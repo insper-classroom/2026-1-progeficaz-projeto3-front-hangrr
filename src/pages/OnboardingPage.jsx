@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import LocationPicker from '../components/LocationPicker'
-import { atualizarUsuario, salvarPreferencias } from '../services/api'
+import { atualizarUsuario, salvarPreferencias, getCategorias } from '../services/api'
 
 /* ─── Data ───────────────────────────────────────────────────────────── */
 const GENEROS = [
@@ -12,20 +12,6 @@ const GENEROS = [
   { id: 'nao_dizer',  label: 'Prefiro não dizer' },
 ]
 
-const CATEGORIAS = [
-  { slug: 'restaurantes', nome: 'Restaurantes', emoji: '🍽️', cor: '#CCFF00', corTexto: '#000',
-    subs: ['Japonesa','Italiana','Churrasco','Vegano','Fast Food','Pizza','Frutos do Mar','Mexicana'] },
-  { slug: 'bares',        nome: 'Bares',        emoji: '🍺', cor: '#FF3D8A', corTexto: '#fff',
-    subs: ['Balada','Boteco','Karaokê','Rooftop','Pub','Wine Bar','Cervejaria'] },
-  { slug: 'cafes',        nome: 'Cafés',        emoji: '☕', cor: '#F5C842', corTexto: '#000',
-    subs: ['Café da Manhã','Brunch','Café da Tarde','Padaria','Confeitaria','Coworking Café'] },
-  { slug: 'jogos',        nome: 'Jogos',        emoji: '🎮', cor: '#3D8AFF', corTexto: '#fff',
-    subs: ['Videogame','Tabuleiro','Boliche','Sinuca','Escape Room','Fliperama','Paintball'] },
-  { slug: 'parque',       nome: 'Parque',       emoji: '🌳', cor: '#00E096', corTexto: '#000',
-    subs: ['Piquenique','Ciclismo','Corrida','Skate','Fotografia','Meditação'] },
-  { slug: 'esportes',     nome: 'Esportes',     emoji: '⚽', cor: '#FF5C3A', corTexto: '#fff',
-    subs: ['Futebol','Basquete','Tênis','Academia','Natação','Vôlei','Padel'] },
-]
 
 const MIN = 3
 
@@ -48,6 +34,11 @@ export default function OnboardingPage() {
   const [selCats, setSelCats]   = useState(new Set())
   const [selSubs, setSelSubs]   = useState({})
   const [expanded, setExpanded] = useState(null)
+  const [categorias, setCategorias] = useState([])
+
+  useEffect(() => {
+    getCategorias().then(cats => setCategorias(cats.map(c => ({ ...c, subs: c.subcategorias || [] })))).catch(() => {})
+  }, [])
 
   const totalSel = selCats.size + Object.values(selSubs).reduce((a, s) => a + s.size, 0)
 
@@ -231,7 +222,7 @@ export default function OnboardingPage() {
 
               {/* Categories */}
               <div style={s.catGrid}>
-                {CATEGORIAS.map(cat => {
+                {categorias.map(cat => {
                   const on = selCats.has(cat.slug)
                   return (
                     <div key={cat.slug}>

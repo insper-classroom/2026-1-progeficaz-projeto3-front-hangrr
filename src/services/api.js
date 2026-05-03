@@ -139,6 +139,24 @@ export async function buscarUsuarios(q, usuario_id) {
   return d.usuarios
 }
 
+// ── Categorias & Configurações ────────────────────────────────────────
+
+let _categoriasCache = null
+export async function getCategorias() {
+  if (_categoriasCache) return _categoriasCache
+  const d = await req('/categorias')
+  _categoriasCache = d.categorias.map(c => ({ ...c, corTexto: c.cor_texto }))
+  return _categoriasCache
+}
+
+let _configCache = null
+export async function getConfiguracoes() {
+  if (_configCache) return _configCache
+  const d = await req('/configuracoes')
+  _configCache = d.configuracoes
+  return _configCache
+}
+
 // ── Google OAuth ──────────────────────────────────────────────────────
 
 export async function loginComGoogle(credential) {

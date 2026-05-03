@@ -5,7 +5,7 @@ import { ArrowLeft, MapPin, Phone, Globe, Loader2, Navigation, X, Maximize2 } fr
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { buscarLugares, getParty } from '../services/api'
+import { buscarLugares, getParty, getCategorias, getConfiguracoes } from '../services/api'
 import { pegarLocalizacao } from '../utils/geo'
 
 // Fix Leaflet's default icon path issue with Vite
@@ -16,24 +16,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-const CATS_META = {
-  restaurantes: { nome: 'Restaurantes', emoji: '🍽️', cor: '#CCFF00', corTexto: '#000' },
-  bares:        { nome: 'Bares',        emoji: '🍺', cor: '#FF3D8A', corTexto: '#fff' },
-  cafes:        { nome: 'Cafés',        emoji: '☕', cor: '#F5C842', corTexto: '#000' },
-  jogos:        { nome: 'Jogos',        emoji: '🎮', cor: '#3D8AFF', corTexto: '#fff' },
-  parque:       { nome: 'Parque',       emoji: '🌳', cor: '#00E096', corTexto: '#000' },
-  esportes:     { nome: 'Esportes',     emoji: '⚽', cor: '#FF5C3A', corTexto: '#fff' },
-}
-
 const AVATAR_PALETTE = ['#FF3D8A', '#3D8AFF', '#00E096', '#FF5C3A', '#F5C842', '#B084FF', '#00CED1']
-
-const RAIOS = [
-  { label: '500m', value: 500 },
-  { label: '1km',  value: 1000 },
-  { label: '2km',  value: 2000 },
-  { label: '5km',  value: 5000 },
-  { label: '10km', value: 10000 },
-]
 
 const GPS_THRESHOLD = 500
 
@@ -94,6 +77,12 @@ export default function ExplorarPage() {
   const raioInicial     = parseInt(searchParams.get('raio') || '2000')
   const [raio, setRaio] = useState(raioInicial)
 
+  const [catsMeta, setCatsMeta] = useState({})
+  const [raios, setRaios]       = useState([
+    { label: '500m', value: 500 }, { label: '1km', value: 1000 },
+    { label: '2km', value: 2000 }, { label: '5km', value: 5000 }, { label: '10km', value: 10000 },
+  ])
+
   const [lugares, setLugares]           = useState([])
   const [cidade, setCidade]             = useState('')
   const [modoGeo, setModoGeo]           = useState(null)
@@ -104,9 +93,14 @@ export default function ExplorarPage() {
   const [membrosGps, setMembrosGps]     = useState([])
   const [mapExpanded, setMapExpanded]   = useState(false)
 
-  const cat = CATS_META[slug] || { nome: slug, emoji: '📍', cor: '#CCFF00', corTexto: '#000' }
+  const cat = catsMeta[slug] || { nome: slug, emoji: '📍', cor: '#CCFF00', corTexto: '#000' }
 
   useEffect(() => { iniciar() }, [codigo, slug])
+
+  useEffect(() => {
+    getCategorias().then(cats => setCatsMeta(Object.fromEntries(cats.map(c => [c.slug, c])))).catch(() => {})
+    getConfiguracoes().then(cfg => { if (cfg.raios_busca) setRaios(cfg.raios_busca) }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (status !== 'loading' && status !== 'localizando') carregar(geoAtual, raio)
@@ -287,7 +281,7 @@ export default function ExplorarPage() {
           {buscandoGeo ? 'Localizando…' : modoGeo === 'gps' ? 'GPS ativo' : 'Usar minha localização'}
         </button>
         <div style={s.raioRow}>
-          {RAIOS.map(r => (
+          {raios.map(r => (
             <button
               key={r.value}
               style={{ ...s.raioPill, ...(raio === r.value ? s.raioPillOn : {}) }}

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Pencil, Check, X, LogOut, Bell, UserPlus, ChevronRight, Camera, Search, Loader2 } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 import LocationPicker from '../components/LocationPicker'
-import { buscarUsuarios, seguirUsuario, atualizarUsuario, salvarPreferencias, listarPartiesUsuario } from '../services/api'
+import { buscarUsuarios, seguirUsuario, atualizarUsuario, salvarPreferencias, listarPartiesUsuario, getCategorias } from '../services/api'
 
 import p1 from '../assets/profiles/black_male_face.png'
 import p2 from '../assets/profiles/asian_woman_face.png'
@@ -18,15 +18,6 @@ const PROFILES = [
   { id: 'bald_male',    src: p4 },
 ]
 
-/* ─── Category data (mirrors onboarding) ─────────────────────────────── */
-const CATS = [
-  { slug: 'restaurantes', nome: 'Restaurantes', emoji: '🍽️', cor: '#CCFF00', corTexto: '#000' },
-  { slug: 'bares',        nome: 'Bares',        emoji: '🍺', cor: '#FF3D8A', corTexto: '#fff' },
-  { slug: 'cafes',        nome: 'Cafés',        emoji: '☕', cor: '#F5C842', corTexto: '#000' },
-  { slug: 'jogos',        nome: 'Jogos',        emoji: '🎮', cor: '#3D8AFF', corTexto: '#fff' },
-  { slug: 'parque',       nome: 'Parque',       emoji: '🌳', cor: '#00E096', corTexto: '#000' },
-  { slug: 'esportes',     nome: 'Esportes',     emoji: '⚽', cor: '#FF5C3A', corTexto: '#fff' },
-]
 
 const TABS = ['Perfil', 'Amigos']
 
@@ -99,6 +90,7 @@ export default function ProfilePage() {
 
   /* parties loaded from API for stats */
   const [partiesData, setPartiesData] = useState([])
+  const [cats, setCats] = useState([])
 
   /* ── Load ── */
   useEffect(() => {
@@ -113,6 +105,7 @@ export default function ProfilePage() {
     if (p?.categorias) setSelCats(new Set(p.categorias.map(c => c.slug)))
     if (n) setNotifs(n)
     listarPartiesUsuario(u._id).then(ps => setPartiesData(ps || [])).catch(() => {})
+    getCategorias().then(setCats).catch(() => {})
   }, [navigate])
 
   /* ── Helpers ── */
@@ -229,7 +222,7 @@ export default function ProfilePage() {
   if (!usuario) return null
 
   const iniciais = usuario.nome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'
-  const catsSelecionadas = CATS.filter(c => prefs?.categorias?.some(p => p.slug === c.slug))
+  const catsSelecionadas = cats.filter(c => prefs?.categorias?.some(p => p.slug === c.slug))
 
   return (
     <div style={s.root}>
@@ -384,7 +377,7 @@ export default function ProfilePage() {
                 {editGostos ? (
                   <>
                     <div style={s.catGrid}>
-                      {CATS.map(cat => {
+                      {cats.map(cat => {
                         const on = selCats.has(cat.slug)
                         return (
                           <motion.button
@@ -431,8 +424,8 @@ export default function ProfilePage() {
                   <div style={s.statsCards}>
                     {favCat && (
                       <div style={s.statCard}>
-                        <span style={{ fontSize: 28 }}>{CATS.find(c => c.slug === favCat)?.emoji}</span>
-                        <p style={s.statCardVal}>{CATS.find(c => c.slug === favCat)?.nome}</p>
+                        <span style={{ fontSize: 28 }}>{cats.find(c => c.slug === favCat)?.emoji}</span>
+                        <p style={s.statCardVal}>{cats.find(c => c.slug === favCat)?.nome}</p>
                         <p style={s.statCardLabel}>Categoria favorita</p>
                       </div>
                     )}
