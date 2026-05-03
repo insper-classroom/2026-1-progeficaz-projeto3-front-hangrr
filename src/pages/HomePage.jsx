@@ -265,13 +265,6 @@ const s = {
   actionLabel: { fontSize: 14, fontWeight: 700, marginBottom: 3 },
   actionDesc:  { fontSize: 12, color: 'var(--text-2)', lineHeight: 1.45 },
 
-  explorarHint: {
-    fontSize: 12, color: 'var(--text-3)',
-    padding: '8px 12px',
-    background: 'var(--bg-1)', border: '1px solid var(--line)',
-    borderRadius: 'var(--r-lg)', marginTop: 2,
-  },
-
   section:      { display: 'flex', flexDirection: 'column', gap: 14 },
   sectionLabel: {
     fontSize: 11, fontWeight: 700, letterSpacing: '0.10em',

@@ -172,23 +172,6 @@ export default function PartyPage() {
 
   // ── Functions ────────────────────────────────────────────────────────────
 
-  function salvarNoHistorico(partyData, membrosData, matchData = null) {
-    if (!partyData?._id) return
-    const entry = {
-      _id:       partyData._id,
-      titulo:    partyData.titulo,
-      cidade:    partyData.cidade,
-      criada_em: partyData.criada_em,
-      membros:   Array.isArray(membrosData) ? membrosData.length : 0,
-      match:     matchData?.match || null,
-    }
-    const saved = JSON.parse(localStorage.getItem('hangr_historico') || '[]')
-    const idx = saved.findIndex(p => p._id === entry._id)
-    if (idx >= 0) saved[idx] = entry
-    else saved.unshift(entry)
-    localStorage.setItem('hangr_historico', JSON.stringify(saved.slice(0, 20)))
-  }
-
   async function carregar() {
     try {
       const partyData = await getParty(codigo)
@@ -233,7 +216,6 @@ export default function PartyPage() {
     try {
       const m = await calcularMatch(codigo)
       setMatch(m)
-      salvarNoHistorico(party, membros, m)
       setView('revealing')
     } catch {
       setHanging(false)
@@ -291,7 +273,6 @@ export default function PartyPage() {
       let matchFinal = match
       try { matchFinal = await calcularMatch(codigo) } catch {}
       await encerrarParty(codigo, usuario._id)
-      salvarNoHistorico(party, membros, matchFinal)
       navigate('/home')
     } catch {
       setEncerrando(false)
