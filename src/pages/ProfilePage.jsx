@@ -233,7 +233,7 @@ export default function ProfilePage() {
 
       {/* backdrop to close picker */}
       {pickingPhoto && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setPickingPhoto(false)} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.5)' }} onClick={() => setPickingPhoto(false)} />
       )}
 
       {/* ── Avatar + info ── */}
@@ -254,9 +254,9 @@ export default function ProfilePage() {
             {pickingPhoto && (
               <motion.div
                 style={s.photoPicker}
-                initial={{ opacity: 0, y: -6, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.92 }}
                 transition={{ duration: 0.16 }}
               >
                 <p style={s.pickerLabel}>Escolha uma foto</p>
@@ -769,12 +769,12 @@ const s = {
 
   /* Photo picker */
   photoPicker: {
-    position: 'absolute', top: 'calc(100% + 10px)', left: '50%',
-    transform: 'translateX(-50%)',
+    position: 'fixed', top: '50%', left: '50%',
+    transform: 'translate(-50%, -50%)',
     background: 'var(--bg-2)', border: '1px solid var(--line)',
     borderRadius: 'var(--r-2xl)', padding: '14px 16px',
-    zIndex: 100, boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-    minWidth: 280,
+    zIndex: 101, boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+    width: 'min(300px, calc(100vw - 32px))',
   },
   pickerLabel: {
     fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
