@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Pencil, Check, X, LogOut, UserPlus, ChevronRight, Camera, Search, Loader2 } from 'lucide-react'
 import BottomNav from '../components/BottomNav'
 import LocationPicker from '../components/LocationPicker'
-import { buscarUsuarios, seguirUsuario, atualizarUsuario, salvarPreferencias, listarPartiesUsuario, getCategorias } from '../services/api'
+import { buscarUsuarios, seguirUsuario, atualizarUsuario, salvarPreferencias, listarPartiesUsuario, getCategorias, apagarConta } from '../services/api'
 
 import p1 from '../assets/profiles/black_male_face.png'
 import p2 from '../assets/profiles/asian_woman_face.png'
@@ -81,6 +81,10 @@ export default function ProfilePage() {
   const [buscandoAmigo, setBuscandoAmigo]   = useState(false)
   const [seguidos, setSeguidos]             = useState(new Set())
   const [linkCopiado, setLinkCopiado]       = useState(false)
+
+  /* delete account */
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deletando, setDeletando] = useState(false)
 
   /* toast */
   const [toast, setToast] = useState(null)
@@ -176,6 +180,16 @@ export default function ProfilePage() {
   }
 
   function sair() {
+    localStorage.removeItem('hangr_user')
+    localStorage.removeItem('hangr_prefs')
+    navigate('/')
+  }
+
+  async function confirmarApagar() {
+    setDeletando(true)
+    try {
+      await apagarConta(usuario._id)
+    } catch {}
     localStorage.removeItem('hangr_user')
     localStorage.removeItem('hangr_prefs')
     navigate('/')
@@ -436,6 +450,9 @@ export default function ProfilePage() {
                 <button style={s.dangerBtn} onClick={sair}>
                   <LogOut size={15} /> Sair da conta
                 </button>
+                <button style={{ ...s.dangerBtn, marginTop: 4, opacity: 0.7 }} onClick={() => setConfirmDelete(true)}>
+                  <X size={15} /> Apagar conta
+                </button>
               </Section>
 
             </motion.div>
@@ -555,6 +572,45 @@ export default function ProfilePage() {
                 <motion.button style={{ ...s.inviteBtn, background: linkCopiado ? 'var(--lime)' : 'var(--bg-3)', color: linkCopiado ? '#000' : '#fff' }} onClick={copiarLinkConvite} whileTap={{ scale: 0.95 }}>
                   {linkCopiado ? <><Check size={12} /> Copiado</> : 'Copiar link'}
                 </motion.button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Confirm delete modal ── */}
+      <AnimatePresence>
+        {confirmDelete && (
+          <>
+            <motion.div
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 300, backdropFilter: 'blur(2px)' }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => !deletando && setConfirmDelete(false)}
+            />
+            <motion.div
+              style={s.deleteModal}
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              transition={{ duration: 0.18 }}
+            >
+              <p style={{ fontSize: 22, marginBottom: 8 }}>🗑️</p>
+              <p style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>Apagar conta?</p>
+              <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5, marginBottom: 20, textAlign: 'center' }}>
+                Essa ação é irreversível. Seus dados e parties serão removidos.
+              </p>
+              <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+                <button style={{ ...s.ghostBtn, flex: 1, justifyContent: 'center' }} onClick={() => setConfirmDelete(false)} disabled={deletando}>
+                  Cancelar
+                </button>
+                <button
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '11px 0', background: '#FF4545', color: '#fff', fontWeight: 700, fontSize: 13, border: 'none', borderRadius: 'var(--r-full)', cursor: 'pointer', opacity: deletando ? 0.6 : 1 }}
+                  onClick={confirmarApagar}
+                  disabled={deletando}
+                >
+                  {deletando ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <X size={14} />}
+                  {deletando ? 'Apagando...' : 'Apagar'}
+                </button>
               </div>
             </motion.div>
           </>
@@ -746,6 +802,17 @@ const s = {
     padding: '9px 16px', background: 'var(--bg-3)', border: '1px solid var(--line)',
     borderRadius: 'var(--r-full)', color: '#fff', fontWeight: 700, fontSize: 12,
     cursor: 'pointer', flexShrink: 0,
+  },
+
+  /* Delete modal */
+  deleteModal: {
+    position: 'fixed', top: '50%', left: '50%',
+    transform: 'translate(-50%, -50%)',
+    background: 'var(--bg-2)', border: '1px solid var(--line)',
+    borderRadius: 'var(--r-2xl)', padding: '28px 24px',
+    zIndex: 301, boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+    width: 'min(320px, calc(100vw - 32px))',
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
   },
 
   /* Avatar button */

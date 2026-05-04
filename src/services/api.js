@@ -184,6 +184,10 @@ export async function enviarMensagemChat(codigo, { usuario_id, nome, texto }) {
 
 // ── Explorar ──────────────────────────────────────────────────────────────
 
+export async function apagarConta(id) {
+  return req(`/usuarios/${id}`, { method: 'DELETE' })
+}
+
 export async function buscarLugares(codigo, slug, raio = 2000, geo = null) {
   let url = `/lugares?codigo=${codigo}&slug=${slug}&raio=${raio}`
   if (geo?.lat != null && geo?.lng != null) {
