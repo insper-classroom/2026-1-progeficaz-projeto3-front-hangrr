@@ -322,7 +322,7 @@ const s = {
 
   content: {
     flex: 1, overflowY: 'auto',
-    padding: '0 0 100px',
+    padding: '0 0 max(100px, calc(env(safe-area-inset-bottom) + 80px))',
     maxWidth: 520, width: '100%', margin: '0 auto',
     display: 'flex', flexDirection: 'column',
   },
@@ -341,7 +341,7 @@ const s = {
   },
   searchInput: {
     flex: 1, background: 'none', border: 'none', outline: 'none',
-    color: 'var(--text-1)', fontSize: 13,
+    color: 'var(--text-1)', fontSize: 16,
   },
   resultSection: { display: 'flex', flexDirection: 'column', gap: 4 },
   sectionLabel: {

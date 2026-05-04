@@ -889,13 +889,13 @@ const s = {
   root: { minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' },
 
   header:      { display: 'flex', alignItems: 'center', gap: 14, padding: '16px 24px', borderBottom: '1px solid var(--line)' },
-  backBtn:     { width: 36, height: 36, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', color: 'var(--text-2)', cursor: 'pointer', background: 'var(--bg-1)' },
+  backBtn:     { width: 44, height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', color: 'var(--text-2)', cursor: 'pointer', background: 'var(--bg-1)' },
   headerSub:   { fontSize: 11, color: 'var(--text-3)', fontWeight: 600, marginBottom: 1 },
   headerTitle: { fontSize: 15, fontWeight: 800, letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   membrosChip: { display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: 'var(--text-2)', padding: '5px 10px', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', flexShrink: 0, cursor: 'pointer', background: 'var(--bg-1)' },
-  iconChip:    { width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', color: 'var(--text-2)', cursor: 'pointer', background: 'var(--bg-1)', flexShrink: 0 },
+  iconChip:    { width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', color: 'var(--text-2)', cursor: 'pointer', background: 'var(--bg-1)', flexShrink: 0 },
 
-  content: { flex: 1, maxWidth: 520, width: '100%', margin: '0 auto', padding: '24px 24px 60px', display: 'flex', flexDirection: 'column', gap: 20 },
+  content: { flex: 1, maxWidth: 520, width: '100%', margin: '0 auto', padding: '20px 16px max(60px, calc(env(safe-area-inset-bottom) + 40px))', display: 'flex', flexDirection: 'column', gap: 20 },
 
   inviteCard:  { display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-xl)' },
   inviteLabel: { fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 3 },
@@ -916,9 +916,9 @@ const s = {
   qrModal: {
     position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
     background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-2xl)',
-    padding: '28px 28px 24px', zIndex: 60,
+    padding: '28px 24px 24px', zIndex: 60,
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-    minWidth: 260,
+    width: 'min(300px, calc(100vw - 32px))',
   },
   qrClose:   { position: 'absolute', top: 14, right: 14, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', color: 'var(--text-2)', cursor: 'pointer' },
   qrTitle:   { fontSize: 13, fontWeight: 800, letterSpacing: '-0.01em', marginBottom: 4 },

@@ -225,7 +225,7 @@ const s = {
   sub:   { fontSize: 14, color: 'var(--text-2)', marginBottom: 4 },
   fields: { display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 },
   field: { display: 'flex', alignItems: 'center', gap: 10, padding: '13px 14px', background: 'var(--bg-2)', border: '1px solid', borderRadius: 'var(--r-lg)', transition: 'border-color .18s' },
-  fieldInput: { flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 14, color: '#fff', minWidth: 0 },
+  fieldInput: { flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 16, color: '#fff', minWidth: 0 },
   eyeBtn: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', display: 'flex', alignItems: 'center', padding: 0, flexShrink: 0 },
   error: { fontSize: 13, color: '#FCA5A5', padding: '10px 14px', background: 'rgba(255,69,69,0.08)', border: '1px solid rgba(255,69,69,0.2)', borderRadius: 'var(--r-md)', marginTop: 2 },
   btn:   { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '14px', background: '#fff', color: '#000', fontWeight: 700, fontSize: 14, borderRadius: 'var(--r-full)', cursor: 'pointer', marginTop: 6, border: 'none' },

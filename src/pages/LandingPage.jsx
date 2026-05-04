@@ -270,10 +270,10 @@ const s = {
 
   /* Problem */
   problem: {
-    padding: '100px 0',
+    padding: 'clamp(60px, 10vw, 100px) 0',
     borderTop: '1px solid var(--line)',
   },
-  container: { maxWidth: 700, margin: '0 auto', padding: '0 28px' },
+  container: { maxWidth: 700, margin: '0 auto', padding: '0 20px' },
   eyebrow: {
     fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
     textTransform: 'uppercase', color: 'var(--text-3)',
@@ -302,7 +302,7 @@ const s = {
 
   /* How it works */
   how: {
-    padding: '100px 0',
+    padding: 'clamp(60px, 10vw, 100px) 0',
     borderTop: '1px solid var(--line)',
   },
   featureRow: {
@@ -321,7 +321,7 @@ const s = {
   /* Final CTA */
   cta: {
     background: 'var(--lime)',
-    padding: '80px 28px',
+    padding: 'clamp(48px, 8vw, 80px) 20px',
   },
   ctaInner: {
     maxWidth: 700, margin: '0 auto',

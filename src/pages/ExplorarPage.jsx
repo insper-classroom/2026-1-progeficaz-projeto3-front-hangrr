@@ -436,17 +436,17 @@ const s = {
   root: { minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' },
 
   header:      { display: 'flex', alignItems: 'center', gap: 14, padding: '16px 24px', borderBottom: '1px solid var(--line)' },
-  backBtn:     { width: 36, height: 36, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', color: 'var(--text-2)', cursor: 'pointer', background: 'var(--bg-1)' },
+  backBtn:     { width: 44, height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', color: 'var(--text-2)', cursor: 'pointer', background: 'var(--bg-1)' },
   headerSub:   { fontSize: 11, color: 'var(--text-3)', fontWeight: 600, marginBottom: 1 },
   headerTitle: { fontSize: 16, fontWeight: 900, letterSpacing: '-0.02em' },
   catChip:     { fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 'var(--r-full)', flexShrink: 0 },
 
-  controlBar:   { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderBottom: '1px solid var(--line)', overflowX: 'auto' },
-  geoBtn:       { display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', fontSize: 12, fontWeight: 700, borderRadius: 'var(--r-full)', border: '1px solid var(--line)', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' },
+  controlBar:   { display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderBottom: '1px solid var(--line)', flexWrap: 'wrap' },
+  geoBtn:       { display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', fontSize: 12, fontWeight: 700, borderRadius: 'var(--r-full)', border: '1px solid var(--line)', cursor: 'pointer', whiteSpace: 'nowrap', minHeight: 36 },
   geoBtnGps:    { background: 'rgba(0,224,150,0.15)', borderColor: 'var(--mint)', color: '#00E096' },
   geoBtnCidade: { background: 'var(--bg-1)', color: 'var(--text-2)' },
-  raioRow:      { display: 'flex', gap: 6, flexShrink: 0, marginLeft: 'auto' },
-  raioPill:     { padding: '5px 12px', fontSize: 12, fontWeight: 700, borderRadius: 'var(--r-full)', border: '1px solid var(--line)', background: 'var(--bg-1)', color: 'var(--text-2)', cursor: 'pointer', whiteSpace: 'nowrap' },
+  raioRow:      { display: 'flex', gap: 6, flexWrap: 'wrap' },
+  raioPill:     { padding: '7px 12px', fontSize: 12, fontWeight: 700, borderRadius: 'var(--r-full)', border: '1px solid var(--line)', background: 'var(--bg-1)', color: 'var(--text-2)', cursor: 'pointer', whiteSpace: 'nowrap', minHeight: 36 },
   raioPillOn:   { background: 'var(--lime)', borderColor: 'var(--lime)', color: '#000' },
 
   content: { flex: 1, maxWidth: 560, width: '100%', margin: '0 auto', padding: '20px 16px 100px' },
@@ -473,7 +473,7 @@ const s = {
 
   /* Mini map (floating) */
   miniMap: {
-    position: 'fixed', bottom: 24, right: 16,
+    position: 'fixed', bottom: 'max(24px, calc(env(safe-area-inset-bottom) + 16px))', right: 16,
     width: 110, height: 110,
     borderRadius: 16,
     border: '2px solid var(--line)',

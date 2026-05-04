@@ -229,9 +229,9 @@ const s = {
 
   content: {
     flex: 1, overflowY: 'auto',
-    padding: '32px 24px 100px',
+    padding: '28px 20px max(100px, calc(env(safe-area-inset-bottom) + 80px))',
     maxWidth: 520, width: '100%', margin: '0 auto',
-    display: 'flex', flexDirection: 'column', gap: 36,
+    display: 'flex', flexDirection: 'column', gap: 32,
   },
 
   hero:      { display: 'flex', flexDirection: 'column', gap: 16 },
@@ -301,7 +301,7 @@ const s = {
   emptyDesc:     { fontSize: 13, color: 'var(--text-2)' },
 
   joinRow:   { display: 'flex', gap: 8, padding: '4px 0 8px' },
-  joinInput: { flex: 1, padding: '12px 14px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-lg)', color: '#fff', fontSize: 14, outline: 'none' },
+  joinInput: { flex: 1, padding: '12px 14px', background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 'var(--r-lg)', color: '#fff', fontSize: 16, outline: 'none' },
   joinBtn:   { width: 44, height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--lime)', color: '#000', border: 'none', borderRadius: 'var(--r-lg)', cursor: 'pointer' },
 
   emptyBtn: {

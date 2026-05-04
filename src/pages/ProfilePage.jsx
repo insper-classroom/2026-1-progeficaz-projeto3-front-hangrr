@@ -583,7 +583,7 @@ function Section({ title, action, children }) {
 
 /* ─── Styles ─────────────────────────────────────────────────────────── */
 const s = {
-  root: { minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', paddingBottom: 80 },
+  root: { minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', paddingBottom: 'max(80px, calc(env(safe-area-inset-bottom) + 68px))' },
 
   nav: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -591,7 +591,7 @@ const s = {
   },
   logo:      { fontSize: 18, fontWeight: 900, letterSpacing: '-0.05em', color: 'var(--lime)' },
   editBtn:   { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: 'var(--text-2)', padding: '7px 14px', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', background: 'var(--bg-1)', cursor: 'pointer' },
-  cancelBtn: { width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', color: 'var(--text-2)', cursor: 'pointer', background: 'var(--bg-1)' },
+  cancelBtn: { width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', color: 'var(--text-2)', cursor: 'pointer', background: 'var(--bg-1)' },
   saveBtn:   { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, padding: '7px 16px', background: 'var(--lime)', color: '#000', border: 'none', borderRadius: 'var(--r-full)', cursor: 'pointer' },
 
   /* Hero */
@@ -711,7 +711,7 @@ const s = {
   },
   searchField: {
     flex: 1, background: 'none', border: 'none', outline: 'none',
-    color: '#fff', fontSize: 14,
+    color: '#fff', fontSize: 16,
   },
   resultList: { display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 20 },
   resultRow: {

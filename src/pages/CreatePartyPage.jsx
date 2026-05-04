@@ -127,7 +127,7 @@ export default function CreatePartyPage() {
 const s = {
   root:    { minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' },
   header:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: '1px solid var(--line)' },
-  backBtn: { width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', color: 'var(--text-2)', cursor: 'pointer', background: 'var(--bg-1)' },
+  backBtn: { width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', color: 'var(--text-2)', cursor: 'pointer', background: 'var(--bg-1)', flexShrink: 0 },
   headerTitle: { fontSize: 15, fontWeight: 700 },
 
   content: { flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '32px 24px 60px' },
@@ -142,7 +142,7 @@ const s = {
     width: '100%', padding: '14px 16px',
     background: 'var(--bg-1)', border: '1px solid var(--line)',
     borderRadius: 'var(--r-lg)', color: '#fff',
-    fontSize: 15, outline: 'none', boxSizing: 'border-box',
+    fontSize: 16, outline: 'none', boxSizing: 'border-box',
   },
 
   cidadeChip: { display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--text-2)', padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--r-full)', width: 'fit-content' },
